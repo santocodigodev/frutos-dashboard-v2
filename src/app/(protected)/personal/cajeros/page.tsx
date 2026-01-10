@@ -2,19 +2,14 @@
 import { useEffect, useState, useCallback } from "react";
 import { useUserOrRedirect } from "../../../utils/auth";
 import Dialog from "../../../components/Dialog";
-import AdminForm from "./AdminForm";
+import AdminForm from "../administradores/AdminForm";
+import PersonalTable from "../administradores/PersonalTable";
 import { FiEdit, FiTrash, FiKey } from "react-icons/fi";
-import PersonalTable from "./PersonalTable";
 import { getApiUrl } from "../../../utils/api";
 
-const ROLES = {
-  SUPERADMIN: "superadmin",
-  ADMIN: "admin",
-};
-
-export default function AdministradoresPage() {
+export default function CajerosPage() {
   const { user, loading: authLoading } = useUserOrRedirect();
-  const [admins, setAdmins] = useState([]);
+  const [cashiers, setCashiers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -28,15 +23,12 @@ export default function AdministradoresPage() {
   const [userToDelete, setUserToDelete] = useState<any>(null);
   const [passwordError, setPasswordError] = useState("");
 
-  const fetchAdmins = useCallback(() => {
+  const canEdit = user?.role === "admin" || user?.role === "superadmin";
+
+  const fetchCashiers = useCallback(() => {
     if (!user?.token) return;
     
-    let filter = "role||$eq||admin";
-    if (user.role === ROLES.SUPERADMIN) {
-      filter = "role||$in||admin,superadmin";
-    }
-    
-    fetch(getApiUrl(`/admin?filter=${encodeURIComponent(filter)}&limit=100&page=1`), {
+    fetch(getApiUrl(`/admin?filter=role||$eq||cashier&limit=100&page=1`), {
       headers: {
         accept: "application/json",
         token: user.token,
@@ -44,33 +36,33 @@ export default function AdministradoresPage() {
     })
       .then((res) => res.json())
       .then((data) => {
-        setAdmins(Array.isArray(data.data) ? data.data : []);
+        setCashiers(Array.isArray(data.data) ? data.data : []);
         setLoading(false);
       })
       .catch(() => {
-        setError("Error al cargar administradores");
+        setError("Error al cargar cajeros");
         setLoading(false);
       });
-  }, [user?.token, user?.role]);
+  }, [user?.token]);
 
   useEffect(() => {
     if (!authLoading && user?.token) {
-      fetchAdmins();
+      fetchCashiers();
     }
-  }, [authLoading, fetchAdmins]);
+  }, [authLoading, fetchCashiers]);
 
   function handleCreate() {
     setEditData(null);
     setShowForm(true);
   }
 
-  function handleEdit(admin: any) {
-    setEditData(admin);
+  function handleEdit(cashier: any) {
+    setEditData(cashier);
     setShowForm(true);
   }
 
-  function handleDelete(admin: any) {
-    setUserToDelete(admin);
+  function handleDelete(cashier: any) {
+    setUserToDelete(cashier);
     setShowDeleteDialog(true);
   }
 
@@ -81,7 +73,7 @@ export default function AdministradoresPage() {
       method: "DELETE",
       headers: { accept: "application/json", token: user.token },
     })
-      .then(() => fetchAdmins())
+      .then(() => fetchCashiers())
       .finally(() => {
         setSaving(false);
         setShowDeleteDialog(false);
@@ -93,7 +85,7 @@ export default function AdministradoresPage() {
     setSaving(true);
     const method = editData ? "PATCH" : "POST";
     const url = editData ? getApiUrl(`/admin/${editData.id}`) : getApiUrl("/admin");
-    const body = { ...data };
+    const body = { ...data, role: "cashier" };
     if (editData && !data.password) delete body.password;
     fetch(url, {
       method,
@@ -107,13 +99,13 @@ export default function AdministradoresPage() {
       .then(() => {
         setShowForm(false);
         setEditData(null);
-        fetchAdmins();
+        fetchCashiers();
       })
       .finally(() => setSaving(false));
   }
 
-  function handleOpenPassword(admin: any) {
-    setPasswordUser(admin);
+  function handleOpenPassword(cashier: any) {
+    setPasswordUser(cashier);
     setPassword("");
     setShowPasswordDialog(true);
   }
@@ -142,13 +134,13 @@ export default function AdministradoresPage() {
       .finally(() => setPasswordLoading(false));
   }
 
-  if (loading) return <div>Cargando administradores...</div>;
-  if (error) return <div>{error}</div>;
+  if (loading) return <div className="px-8">Cargando cajeros...</div>;
+  if (error) return <div className="px-8">{error}</div>;
 
   return (
     <div className="px-8">
       <h1 className="text-2xl font-bold mb-6 text-purple-700 flex items-center justify-between">
-        Administradores
+        Cajeros
         <button
           className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"
           onClick={handleCreate}
@@ -157,17 +149,17 @@ export default function AdministradoresPage() {
         </button>
       </h1>
       <PersonalTable
-        users={admins}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onChangePassword={handleOpenPassword}
-        canChangePassword={user.role === ROLES.SUPERADMIN}
+        users={cashiers}
+        onEdit={canEdit ? handleEdit : undefined}
+        onDelete={canEdit ? handleDelete : undefined}
+        onChangePassword={canEdit ? handleOpenPassword : undefined}
+        canChangePassword={user.role === "superadmin"}
         loading={loading || saving}
       />
       <Dialog
         isOpen={showForm}
         onClose={() => { setShowForm(false); setEditData(null); }}
-        title={editData ? "Editar usuario" : "Crear usuario"}
+        title={editData ? "Editar cajero" : "Crear cajero"}
         isLoading={saving}
         onSave={undefined}
       >
@@ -176,7 +168,7 @@ export default function AdministradoresPage() {
           onSave={handleSave}
           loading={saving}
           isEdit={!!editData}
-          showRole={true}
+          showRole={false}
           showPassword={true}
         />
       </Dialog>
@@ -203,7 +195,7 @@ export default function AdministradoresPage() {
       <Dialog
         isOpen={showDeleteDialog}
         onClose={() => setShowDeleteDialog(false)}
-        title="Eliminar usuario"
+        title="Eliminar cajero"
         isLoading={saving}
         onSave={confirmDelete}
         saveText="Eliminar"
@@ -214,4 +206,4 @@ export default function AdministradoresPage() {
       </Dialog>
     </div>
   );
-} 
+}

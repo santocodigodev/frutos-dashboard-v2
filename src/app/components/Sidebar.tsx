@@ -36,6 +36,7 @@ const personalMenu = [
 const configMenu = [
   { label: "Zonas", href: "/configuracion/zonas" },
   { label: "Zonas Horarias", href: "/configuracion/zonas-horarias" },
+  { label: "Ubicaciones", href: "/configuracion/ubicaciones" },
   { label: "Sucursales", href: "/configuracion/sucursales" },
   { label: "Descuentos", href: "/configuracion/descuentos" },
   { label: "Cajas", href: "/configuracion/cajas" },

@@ -641,7 +641,7 @@ export default function PedidosPorAsignarContent() {
         <OrderDetailDialog
           o_TN_Order_number={selectedOrderNumber}
           onClose={() => setSelectedOrderNumber(null)}
-          readOnly={true}
+          readOnly={false}
         />
       )}
     </div>

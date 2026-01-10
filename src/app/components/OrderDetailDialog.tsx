@@ -554,8 +554,8 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
                 <div className="flex-1">
                   <label className="block text-xs text-gray-500 mb-1">Direccion completa</label>
                   <input 
-                    className="w-full border rounded px-2 py-1 text-black bg-white" 
-                    disabled
+                    className={`w-full border rounded px-2 py-1 text-black ${canEdit && !readOnly ? 'bg-white' : 'bg-gray-100'}`}
+                    disabled={!canEdit || readOnly}
                     value={editedOrder?.finalDestiny?.name || editedOrder?.TNOrder?.billing_address || ""} 
                     onChange={(e) => handleInputChange('TNOrder.billing_address', e.target.value)}
                     placeholder="Dirección" 
@@ -563,16 +563,16 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
                   </div>
                   <button 
                     className={`px-3 py-1 rounded text-xs mb-1 ${
-                      readOnly || order.localStatus === 'finished' || order.localStatus === 'canceled'
+                      !canEdit || readOnly
                         ? 'bg-gray-400 text-white cursor-not-allowed opacity-50'
                         : 'bg-purple-500 text-white hover:bg-purple-600'
                     }`}
                     onClick={() => {
-                      if (!readOnly && order.localStatus !== 'finished' && order.localStatus !== 'canceled') {
+                      if (canEdit && !readOnly) {
                         setShowMap(true);
                       }
                     }}
-                    disabled={readOnly || order.localStatus === 'finished' || order.localStatus === 'canceled'}
+                    disabled={!canEdit || readOnly}
                   >
                     Ubicar
                   </button>
@@ -582,9 +582,9 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
             <div>
               <label className="block text-xs text-gray-500 mb-1">Número</label>
               <input 
-                  className="w-full border rounded px-2 py-1 text-black bg-white" 
+                  className={`w-full border rounded px-2 py-1 text-black ${canEdit && !readOnly ? 'bg-white' : 'bg-gray-100'}`}
                   value={editedOrder?.TNOrder?.billing_number || ""} 
-                  disabled
+                  disabled={!canEdit || readOnly}
                   onChange={(e) => handleInputChange('TNOrder.billing_number', e.target.value)}
                   placeholder="Número" 
                 />
@@ -594,9 +594,9 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Depto</label>
                 <input 
-                  className="w-full border rounded px-2 py-1 text-black bg-white" 
+                  className={`w-full border rounded px-2 py-1 text-black ${canEdit && !readOnly ? 'bg-white' : 'bg-gray-100'}`}
                   value={editedOrder?.TNOrder?.billing_floor || ""} 
-                  disabled 
+                  disabled={!canEdit || readOnly}
                   onChange={(e) => handleInputChange('TNOrder.billing_floor', e.target.value)}
                   placeholder="Depto" 
                 />
@@ -606,9 +606,9 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Codigo postal</label>
                 <input 
-                  className="w-full border rounded px-2 py-1 text-black bg-white" 
+                  className={`w-full border rounded px-2 py-1 text-black ${canEdit && !readOnly ? 'bg-white' : 'bg-gray-100'}`}
                   value={editedOrder?.TNOrder?.billing_zipcode || ""} 
-                  disabled 
+                  disabled={!canEdit || readOnly}
                   onChange={(e) => handleInputChange('TNOrder.billing_zipcode', e.target.value)}
                   placeholder="Código postal" 
                 />
@@ -618,9 +618,9 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Ciudad</label>
                 <input 
-                  className="w-full border rounded px-2 py-1 text-black bg-white" 
+                  className={`w-full border rounded px-2 py-1 text-black ${canEdit && !readOnly ? 'bg-white' : 'bg-gray-100'}`}
                   value={editedOrder?.TNOrder?.billing_city || ""} 
-                  disabled 
+                  disabled={!canEdit || readOnly}
                   onChange={(e) => handleInputChange('TNOrder.billing_city', e.target.value)}
                   placeholder="Ciudad" 
                 />
@@ -630,9 +630,9 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Barrio</label>
                 <input 
-                  className="w-full border rounded px-2 py-1 text-black bg-white" 
+                  className={`w-full border rounded px-2 py-1 text-black ${canEdit && !readOnly ? 'bg-white' : 'bg-gray-100'}`}
                   value={editedOrder?.TNOrder?.billing_locality || ""}
-                  disabled 
+                  disabled={!canEdit || readOnly}
                   onChange={(e) => handleInputChange('TNOrder.billing_locality', e.target.value)}
                   placeholder="Barrio" 
                 />

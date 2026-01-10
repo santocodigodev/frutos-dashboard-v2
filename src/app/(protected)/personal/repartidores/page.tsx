@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useUserOrRedirect } from "../../../utils/auth";
 import Dialog from "../../../components/Dialog";
 import AdminForm from "../administradores/AdminForm";
@@ -8,7 +8,7 @@ import { FiEdit, FiTrash, FiKey } from "react-icons/fi";
 import { getApiUrl } from "../../../utils/api";
 
 export default function RepartidoresPage() {
-  const user = useUserOrRedirect();
+  const { user, loading: authLoading } = useUserOrRedirect();
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -23,8 +23,9 @@ export default function RepartidoresPage() {
   const [userToDelete, setUserToDelete] = useState<any>(null);
   const [passwordError, setPasswordError] = useState("");
 
-  function fetchDrivers() {
-    if (!user) return;
+  const fetchDrivers = useCallback(() => {
+    if (!user?.token) return;
+    
     fetch(getApiUrl(`/admin?filter=role||$eq||driver&limit=100&page=1`), {
       headers: {
         accept: "application/json",
@@ -40,11 +41,13 @@ export default function RepartidoresPage() {
         setError("Error al cargar repartidores");
         setLoading(false);
       });
-  }
+  }, [user?.token]);
 
   useEffect(() => {
-    fetchDrivers();
-  }, [user]);
+    if (!authLoading && user?.token) {
+      fetchDrivers();
+    }
+  }, [authLoading, fetchDrivers]);
 
   function handleCreate() {
     setEditData(null);
