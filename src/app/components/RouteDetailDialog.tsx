@@ -2,9 +2,10 @@
 
 import { Fragment, useState, useEffect, useRef } from 'react';
 import { Dialog as HeadlessDialog, Transition } from '@headlessui/react';
-import { FiX, FiMoreVertical } from 'react-icons/fi';
+import { FiX, FiMoreVertical, FiUser } from 'react-icons/fi';
 import { createPortal } from 'react-dom';
 import LiveMapDialog from './LiveMapDialog';
+import AssignDriverDialog from './AssignDriverDialog';
 import { getApiUrl } from '../utils/api';
 
 interface RouteDetailDialogProps {
@@ -22,6 +23,7 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
   const [isRemovingOrder, setIsRemovingOrder] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [showLiveMap, setShowLiveMap] = useState(false);
+  const [showAssignDriver, setShowAssignDriver] = useState(false);
   const buttonRefs = useRef<{ [key: number]: HTMLButtonElement | null }>({});
 
   // Close dropdown when clicking outside
@@ -226,6 +228,19 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
                     )}
                   </div>
                   <div className="flex items-center gap-3">
+                    {route.localStatus === "created" && (
+                      <button
+                        onClick={(e) => {
+                          if (!isActive) return;
+                          e.stopPropagation();
+                          setShowAssignDriver(true);
+                        }}
+                        className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <FiUser className="h-4 w-4" />
+                        {route.delivery ? 'Reasignar Repartidor' : 'Asignar Repartidor'}
+                      </button>
+                    )}
                     {!canRemoveOrders && route.localStatus !== "closed" && (
                       <button
                         onClick={(e) => {
@@ -434,6 +449,19 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
         isOpen={showLiveMap}
         onClose={() => setShowLiveMap(false)}
         route={route}
+      />
+
+      {/* Assign Driver Dialog */}
+      <AssignDriverDialog
+        isOpen={showAssignDriver}
+        onClose={() => setShowAssignDriver(false)}
+        routeId={route.id}
+        currentDriver={route.delivery}
+        onDriverAssigned={() => {
+          if (onRouteUpdated) {
+            onRouteUpdated();
+          }
+        }}
       />
     </Transition>
   );

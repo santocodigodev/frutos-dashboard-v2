@@ -59,9 +59,27 @@ export default function RutasActivas() {
     setSelectedRoute(null);
   };
 
-  const handleRouteUpdated = () => {
+  const handleRouteUpdated = async () => {
     refreshRutas();
     refreshCounts();
+    // Refresh the selected route data
+    if (selectedRoute?.id) {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const response = await fetch(getApiUrl(`/route/${selectedRoute.id}`), {
+          headers: {
+            'accept': 'application/json',
+            'token': user.token
+          }
+        });
+        if (response.ok) {
+          const routeData = await response.json();
+          setSelectedRoute(routeData);
+        }
+      } catch (error) {
+        console.error('Error refreshing route data:', error);
+      }
+    }
   };
 
   if (loading) return <div className="text-gray-500">Cargando...</div>;
