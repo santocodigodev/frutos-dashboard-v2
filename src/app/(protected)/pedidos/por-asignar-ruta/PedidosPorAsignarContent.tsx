@@ -111,6 +111,11 @@ export default function PedidosPorAsignarContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.token]);
 
+  // Deseleccionar todas las órdenes cuando cambia la zona o franja horaria
+  useEffect(() => {
+    setSelectedMarkers(new Map());
+  }, [selectedZone, selectedTimezone]);
+
   // Calculate filtered order IDs using useMemo to avoid unnecessary recalculations
   const filteredOrderIds = useMemo(() => {
     if (selectedZone === undefined || selectedTimezone === undefined || !orders || orders.length === 0) {
