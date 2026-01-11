@@ -950,6 +950,11 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
             <div className="border rounded-lg p-4 bg-gray-50">
               <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Administrativo</h3>
               <div className="space-y-1">
+                {editedOrder?.kg !== undefined && editedOrder?.kg !== null && (
+                  <div className="text-gray-700 mb-2">
+                    Peso total <span className="ml-2 font-bold">{editedOrder.kg} kg</span>
+                  </div>
+                )}
                 <div className="text-gray-700">
                   Subtotal productos <span className="ml-2 font-bold">{formatMoney(editedOrder.TNOrder?.products?.reduce((total: number, product: any) => total + (Number(product.price) * product.quantity), 0) || 0)}</span>
                 </div>

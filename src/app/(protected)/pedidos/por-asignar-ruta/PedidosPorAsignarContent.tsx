@@ -295,6 +295,16 @@ export default function PedidosPorAsignarContent() {
   // fullOrders ya viene filtrado por filteredOrderIds basado en zona y timezone
   const filtered = fullOrders;
 
+  // Calculate total KG of selected orders
+  const totalKg = useMemo(() => {
+    return filtered
+      .filter((order: any) => selectedMarkers.get(order.id))
+      .reduce((sum: number, order: any) => {
+        const kg = order.kg || 0;
+        return sum + Number(kg);
+      }, 0);
+  }, [filtered, selectedMarkers]);
+
   function handleSelectAll(checked: boolean) {
     const newSelection = new Map(selectedMarkers);
     if (checked) {
@@ -402,9 +412,10 @@ export default function PedidosPorAsignarContent() {
             {filtered.length} pedidos en {selectedZone || 'todas las zonas'} {selectedTimezone && `- ${selectedTimezone}`}
           </p>
           {selectedCount > 0 && (
-            <p className="text-purple-600 font-semibold">
-              {selectedCount} pedido(s) seleccionado(s)
-            </p>
+            <div className="text-purple-600 font-semibold">
+              <p>{selectedCount} pedido(s) seleccionado(s)</p>
+              <p className="text-sm font-normal text-gray-600">Total: {totalKg.toFixed(2)} kg</p>
+            </div>
           )}
         </div>
         <div className="flex gap-2">
@@ -620,6 +631,7 @@ export default function PedidosPorAsignarContent() {
           timezone={selectedTimezone || ''}
           zoneId={zones.find((z: any) => z.name === selectedZone)?.id || 0}
           timezoneId={timezones.find((tz: any) => tz.name === selectedTimezone)?.id || 0}
+          totalKg={totalKg}
           onRouteAssigned={async () => {
             await refreshOrders();
             setSelectedMarkers(new Map());

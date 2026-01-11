@@ -16,6 +16,7 @@ interface AssignRouteDialogProps {
   timezone: string;
   zoneId: number;
   timezoneId: number;
+  totalKg?: number;
   onRouteAssigned?: () => void;
 }
 
@@ -28,6 +29,7 @@ export default function AssignRouteDialog({
   timezone,
   zoneId,
   timezoneId,
+  totalKg = 0,
   onRouteAssigned
 }: AssignRouteDialogProps) {
   const [routes, setRoutes] = useState<any[]>([]);
@@ -142,6 +144,10 @@ export default function AssignRouteDialog({
               <div className="mb-6">
                 <p className="text-gray-600">Zona: <span className="font-semibold">{zone}</span></p>
                 <p className="text-gray-600">Zona horaria: <span className="font-semibold">{timezone}</span></p>
+                <p className="text-gray-600">Pedidos seleccionados: <span className="font-semibold">{selectedOrders.length}</span></p>
+                {totalKg > 0 && (
+                  <p className="text-gray-600">Peso total: <span className="font-semibold">{totalKg.toFixed(2)} kg</span></p>
+                )}
               </div>
 
               <div className="mb-6">
