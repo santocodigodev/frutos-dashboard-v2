@@ -1,17 +1,20 @@
 "use client";
 import { useUserOrRedirect } from "../../../utils/auth";
-import { useRutas } from "../RutasContext";
 import RouteTable from "../../../components/RouteTable";
 import CreateRouteDialog from "../../../components/CreateRouteDialog";
 import RouteDetailDialog from "../../../components/RouteDetailDialog";
 import OrderDetailDialog from "../../../components/OrderDetailDialog";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSidebarRutas } from '../SidebarContext';
 import { getApiUrl } from "../../../utils/api";
 
 export default function RutasCreadas() {
   useUserOrRedirect();
-  const { rutas, loading, refreshRutas } = useRutas();
+  const [rutas, setRutas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 10;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<any>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
@@ -19,12 +22,38 @@ export default function RutasCreadas() {
   const [selectedOrderNumber, setSelectedOrderNumber] = useState<number | null>(null);
   const { refreshCounts } = useSidebarRutas();
 
-  const rutasCreadas = rutas.filter(r => r.localStatus === "created");
+  const fetchRutasCreadas = async () => {
+    try {
+      setLoading(true);
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const response = await fetch(getApiUrl(`/route/by-status?status=created&page=${page}&limit=${limit}`), {
+        headers: {
+          'accept': 'application/json',
+          'token': user.token
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setRutas(data.data || []);
+      setTotalPages(Math.ceil((data.total || 0) / limit));
+    } catch (error) {
+      console.error('Error fetching created routes:', error);
+      setRutas([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRutasCreadas();
+  }, [page]);
 
   const handleOpenDialog = () => setIsDialogOpen(true);
   const handleCloseDialog = () => setIsDialogOpen(false);
   const handleRouteCreated = () => {
-    refreshRutas(); // Refresh the list of routes after creation
+    fetchRutasCreadas(); // Refresh the list of routes after creation
     refreshCounts(); // Refresh sidebar counts
   };
 
@@ -60,7 +89,7 @@ export default function RutasCreadas() {
   };
 
   const handleRouteUpdated = async () => {
-    refreshRutas();
+    fetchRutasCreadas();
     refreshCounts();
     // Refresh the selected route data
     if (selectedRoute?.id) {
@@ -92,10 +121,33 @@ export default function RutasCreadas() {
       </div>
       <p className="text-gray-600 mb-6">Ver y editar rutas creadas</p>
       
-      {rutasCreadas.length === 0 ? (
+      {rutas.length === 0 ? (
         <div className="text-gray-500">No hay rutas creadas.</div>
       ) : (
-        <RouteTable routes={rutasCreadas} onRouteClick={handleRouteClick} />
+        <>
+          <RouteTable routes={rutas} onRouteClick={handleRouteClick} />
+          
+          {/* Paginación */}
+          <div className="flex justify-center gap-2 mt-4">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg disabled:opacity-50"
+            >
+              Anterior
+            </button>
+            <span className="px-4 py-2">
+              Página {page} de {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg disabled:opacity-50"
+            >
+              Siguiente
+            </button>
+          </div>
+        </>
       )}
 
       <CreateRouteDialog 

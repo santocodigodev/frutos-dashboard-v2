@@ -33,7 +33,7 @@ export default function ZonasHorariasPage() {
       const data = await response.json();
       setTimezones(data);
     } catch (error) {
-      toast.error('Error al cargar las zonas horarias');
+      toast.error('Error al cargar las franjas horarias');
     }
   };
 
@@ -56,11 +56,11 @@ export default function ZonasHorariasPage() {
 
       if (!response.ok) throw new Error('Error saving timezone');
       
-      toast.success(editingTimezone ? 'Zona horaria actualizada' : 'Zona horaria creada');
+      toast.success(editingTimezone ? 'Franja horaria actualizada' : 'Franja horaria creada');
       setIsDialogOpen(false);
       fetchTimezones();
     } catch (error) {
-      toast.error('Error al guardar la zona horaria');
+      toast.error('Error al guardar la franja horaria');
     } finally {
       setIsLoading(false);
     }
@@ -81,13 +81,13 @@ export default function ZonasHorariasPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Zonas Horarias</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">Franjas horarias</h1>
         <button
           onClick={openNewTimezoneDialog}
           className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none"
         >
           <FiPlus className="h-5 w-5 mr-2" />
-          Nueva Zona Horaria
+          Nueva Franja horaria
         </button>
       </div>
 
@@ -133,7 +133,7 @@ export default function ZonasHorariasPage() {
           setEditingTimezone(null);
           reset();
         }}
-        title={editingTimezone ? "Editar Zona Horaria" : "Nueva Zona Horaria"}
+        title={editingTimezone ? "Editar Franja horaria" : "Nueva Franja horaria"}
         isLoading={isLoading}
         onSave={handleSubmit(onSubmit)}
       >

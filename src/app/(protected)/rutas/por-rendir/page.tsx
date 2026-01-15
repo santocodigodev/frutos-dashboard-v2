@@ -1,32 +1,28 @@
 "use client";
 import { useUserOrRedirect } from "../../../utils/auth";
+import { useState, useEffect } from "react";
 import RouteTable from "../../../components/RouteTable";
-import CreateRouteDialog from "../../../components/CreateRouteDialog";
 import RouteDetailDialog from "../../../components/RouteDetailDialog";
 import OrderDetailDialog from "../../../components/OrderDetailDialog";
-import { useState, useEffect } from 'react';
-import { useSidebarRutas } from '../SidebarContext';
 import { getApiUrl } from "../../../utils/api";
 
-export default function RutasActivas() {
+export default function RutasPorRendir() {
   useUserOrRedirect();
   const [rutas, setRutas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<any>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [loadingRoute, setLoadingRoute] = useState(false);
   const [selectedOrderNumber, setSelectedOrderNumber] = useState<number | null>(null);
-  const { refreshCounts } = useSidebarRutas();
 
-  const fetchRutasActivas = async () => {
+  const fetchRutasPorRendir = async () => {
     try {
       setLoading(true);
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const response = await fetch(getApiUrl(`/route/by-status?status=active&page=${page}&limit=${limit}`), {
+      const response = await fetch(getApiUrl(`/route/by-status?status=closed&page=${page}&limit=${limit}`), {
         headers: {
           'accept': 'application/json',
           'token': user.token
@@ -39,7 +35,7 @@ export default function RutasActivas() {
       setRutas(data.data || []);
       setTotalPages(Math.ceil((data.total || 0) / limit));
     } catch (error) {
-      console.error('Error fetching active routes:', error);
+      console.error('Error fetching routes to render:', error);
       setRutas([]);
     } finally {
       setLoading(false);
@@ -47,15 +43,8 @@ export default function RutasActivas() {
   };
 
   useEffect(() => {
-    fetchRutasActivas();
+    fetchRutasPorRendir();
   }, [page]);
-
-  const handleOpenDialog = () => setIsDialogOpen(true);
-  const handleCloseDialog = () => setIsDialogOpen(false);
-  const handleRouteCreated = () => {
-    fetchRutasActivas(); // Refresh the list of routes after creation
-    refreshCounts(); // Refresh sidebar counts
-  };
 
   const handleRouteClick = async (route: any) => {
     setLoadingRoute(true);
@@ -89,8 +78,7 @@ export default function RutasActivas() {
   };
 
   const handleRouteUpdated = async () => {
-    fetchRutasActivas();
-    refreshCounts();
+    fetchRutasPorRendir();
     // Refresh the selected route data
     if (selectedRoute?.id) {
       try {
@@ -116,13 +104,12 @@ export default function RutasActivas() {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-gray-500">Rutas activas</h2>
-        <button className="bg-purple-600 text-white px-4 py-2 rounded-lg" onClick={handleOpenDialog}>Nueva Ruta</button>
+        <h2 className="text-xl font-semibold text-gray-500">Rutas por rendir</h2>
       </div>
-       <p className="text-gray-600 mb-6">Ver y editar rutas activas</p>
+      <p className="text-gray-600 mb-6">Rutas cerradas pendientes de rendición</p>
 
       {rutas.length === 0 ? (
-        <div className="text-gray-500">No hay rutas activas.</div>
+        <div className="text-gray-500">No hay rutas por rendir.</div>
       ) : (
         <>
           <RouteTable routes={rutas} onRouteClick={handleRouteClick} />
@@ -150,12 +137,6 @@ export default function RutasActivas() {
         </>
       )}
 
-       <CreateRouteDialog 
-        open={isDialogOpen}
-        onClose={handleCloseDialog}
-        onRouteCreated={handleRouteCreated}
-      />
-
       {isDetailDialogOpen && selectedRoute && (
         <RouteDetailDialog
           isOpen={isDetailDialogOpen}
@@ -163,8 +144,8 @@ export default function RutasActivas() {
           route={selectedRoute}
           onRouteUpdated={handleRouteUpdated}
           onShowOrderDetail={(orderNumber) => setSelectedOrderNumber(orderNumber)}
-          isActive={selectedRoute.localStatus === "active"}
-          canRemoveOrders={selectedRoute.localStatus === "created"}
+          isActive={selectedRoute.localStatus === "closed"}
+          canRemoveOrders={false}
         />
       )}
 
@@ -177,4 +158,4 @@ export default function RutasActivas() {
       )}
     </div>
   );
-} 
+}

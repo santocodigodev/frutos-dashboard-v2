@@ -199,6 +199,9 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
         refreshOrders(),
         refreshCounts()
       ]);
+      
+      // Recargar la página para actualizar el sidebar cuando cambia el estado de la orden
+      window.location.reload();
     } catch (error) {
       console.error('Error saving changes:', error);
       // TODO: Add proper error handling/notification
@@ -419,6 +422,9 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
       setShowCancelConfirmation(false);
       setCancelMotive("");
       setCancelDetails("");
+      
+      // Recargar la página para actualizar el sidebar cuando se cancela una orden
+      window.location.reload();
     } catch (error) {
       console.error('Error canceling order:', error);
       alert('Error al cancelar la orden. Por favor intente nuevamente.');

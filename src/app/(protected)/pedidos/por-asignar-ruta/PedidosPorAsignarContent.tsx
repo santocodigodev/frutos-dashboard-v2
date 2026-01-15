@@ -2,6 +2,7 @@
 
 import { useUserOrRedirect } from "../../../utils/auth";
 import { usePedidos } from "../PedidosContext";
+import { useSidebarRutas } from "../../rutas/SidebarContext";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import L from "leaflet";
 import 'leaflet/dist/leaflet.css';
@@ -39,6 +40,7 @@ const purpleIcon = new L.Icon({
 export default function PedidosPorAsignarContent() {
   useUserOrRedirect();
   const { orders, loading, refreshOrders } = usePedidos();
+  const { refreshCounts } = useSidebarRutas();
   const [zones, setZones] = useState<any[]>([]);
   const [selectedZone, setSelectedZone] = useState<string | undefined>(undefined);
   const [selectedMarkers, setSelectedMarkers] = useState<Map<number, boolean>>(new Map());
@@ -350,7 +352,7 @@ export default function PedidosPorAsignarContent() {
     }
     
     if (!selectedZone || !selectedTimezone) {
-      alert('Debe seleccionar una zona y zona horaria');
+      alert('Debe seleccionar una zona y franja horaria');
       return;
     }
 
@@ -537,7 +539,7 @@ export default function PedidosPorAsignarContent() {
                       <th className="py-3 px-4 font-semibold">Método de pago</th>
                       <th className="py-3 px-4 font-semibold">Tipo de entrega</th>
                       <th className="py-3 px-4 font-semibold">Zona</th>
-                      <th className="py-3 px-4 font-semibold">Zona horaria</th>
+                      <th className="py-3 px-4 font-semibold">Franja horaria</th>
                       <th className="py-3 px-4 font-semibold">Total</th>
                       <th className="py-3 px-4 font-semibold">Dirección</th>
                       <th className="py-3 px-4 font-semibold text-right">Acciones</th>
@@ -613,13 +615,13 @@ export default function PedidosPorAsignarContent() {
 
       {selectedZone && !selectedTimezone && (
         <div className="text-center py-8 text-gray-500">
-          Selecciona una zona horaria para ver los pedidos en el mapa
+          Selecciona una franja horaria para ver los pedidos en el mapa
         </div>
       )}
 
       {selectedZone && selectedTimezone && filtered.length === 0 && (
         <div className="text-center py-8 text-gray-500">
-          No hay pedidos para la zona y zona horaria seleccionadas
+          No hay pedidos para la zona y franja horaria seleccionadas
         </div>
       )}
 
@@ -638,7 +640,7 @@ export default function PedidosPorAsignarContent() {
           timezoneId={timezones.find((tz: any) => tz.name === selectedTimezone)?.id || 0}
           totalKg={totalKg}
           onRouteAssigned={async () => {
-            await refreshOrders();
+            // Los datos ya se actualizaron en AssignRouteDialog, solo limpiamos la selección
             setSelectedMarkers(new Map());
           }}
         />

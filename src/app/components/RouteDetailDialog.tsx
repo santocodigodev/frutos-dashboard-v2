@@ -2,7 +2,7 @@
 
 import { Fragment, useState, useEffect, useRef } from 'react';
 import { Dialog as HeadlessDialog, Transition } from '@headlessui/react';
-import { FiX, FiMoreVertical, FiUser } from 'react-icons/fi';
+import { FiX, FiMoreVertical, FiUser, FiAlertTriangle } from 'react-icons/fi';
 import { createPortal } from 'react-dom';
 import LiveMapDialog from './LiveMapDialog';
 import AssignDriverDialog from './AssignDriverDialog';
@@ -24,6 +24,11 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [showLiveMap, setShowLiveMap] = useState(false);
   const [showAssignDriver, setShowAssignDriver] = useState(false);
+  const [isEditingDate, setIsEditingDate] = useState(false);
+  const [editedDate, setEditedDate] = useState('');
+  const [isSavingDate, setIsSavingDate] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const buttonRefs = useRef<{ [key: number]: HTMLButtonElement | null }>({});
 
   // Close dropdown when clicking outside
@@ -42,6 +47,17 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
       document.removeEventListener('click', handleClickOutside);
     };
   }, [selectedOrderId]);
+
+  // Initialize edited date when route changes
+  useEffect(() => {
+    if (route?.scheduledDate) {
+      const date = new Date(route.scheduledDate);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      setEditedDate(`${year}-${month}-${day}`);
+    }
+  }, [route]);
 
   if (!route) return null;
 
@@ -182,6 +198,103 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
     }
   };
 
+  const handleCancelRoute = async () => {
+    if (!route?.id || route.localStatus !== "created") return;
+    
+    setIsCanceling(true);
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const response = await fetch(getApiUrl(`/route/${route.id}/cancel`), {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'token': user.token
+        },
+      });
+
+      if (response.ok) {
+        setShowCancelConfirmation(false);
+        // Call the callback to refresh the route data
+        if (onRouteUpdated) {
+          onRouteUpdated();
+        }
+        onClose(); // Close the dialog
+        // Refresh the entire page to update sidebar counts
+        window.location.reload();
+      } else {
+        console.error('Error canceling route');
+        alert('Error al cancelar la ruta. Por favor, intenta nuevamente.');
+      }
+    } catch (error) {
+      console.error('Error canceling route:', error);
+      alert('Error al cancelar la ruta. Por favor, intenta nuevamente.');
+    } finally {
+      setIsCanceling(false);
+    }
+  };
+
+  const handleSaveDate = async () => {
+    if (!editedDate || !route?.id) return;
+    
+    setIsSavingDate(true);
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      // Parse the timezone name to extract time if available
+      const timezoneName = route.timeZone?.name || '';
+      const timeMatch = timezoneName.match(/^De (\d{1,2}):(\d{2})/);
+      
+      let scheduledDateTime = editedDate;
+      if (timeMatch) {
+        const hours = timeMatch[1].padStart(2, '0');
+        const minutes = timeMatch[2];
+        scheduledDateTime = `${editedDate}T${hours}:${minutes}:00Z`;
+      } else {
+        scheduledDateTime = `${editedDate}T00:00:00Z`;
+      }
+
+      const response = await fetch(getApiUrl(`/route/${route.id}`), {
+        method: 'PATCH',
+        headers: {
+          'accept': 'application/json',
+          'token': user.token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          scheduledDate: scheduledDateTime
+        })
+      });
+
+      if (response.ok) {
+        setIsEditingDate(false);
+        if (onRouteUpdated) {
+          onRouteUpdated();
+        }
+        // Recargar la página para actualizar el sidebar
+        window.location.reload();
+      } else {
+        console.error('Error updating route date');
+        alert('Error al actualizar la fecha de la ruta. Por favor intente nuevamente.');
+      }
+    } catch (error) {
+      console.error('Error updating route date:', error);
+      alert('Error al actualizar la fecha de la ruta. Por favor intente nuevamente.');
+    } finally {
+      setIsSavingDate(false);
+    }
+  };
+
+  const handleCancelEditDate = () => {
+    if (route?.scheduledDate) {
+      const date = new Date(route.scheduledDate);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      setEditedDate(`${year}-${month}-${day}`);
+    }
+    setIsEditingDate(false);
+  };
+
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <HeadlessDialog as="div" className={`relative z-[50] ${!isActive ? 'pointer-events-none' : ''}`} onClose={() => {}}>
@@ -229,17 +342,29 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
                   </div>
                   <div className="flex items-center gap-3">
                     {route.localStatus === "created" && (
-                      <button
-                        onClick={(e) => {
-                          if (!isActive) return;
-                          e.stopPropagation();
-                          setShowAssignDriver(true);
-                        }}
-                        className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        <FiUser className="h-4 w-4" />
-                        {route.delivery ? 'Reasignar Repartidor' : 'Asignar Repartidor'}
-                      </button>
+                      <>
+                        <button
+                          onClick={(e) => {
+                            if (!isActive) return;
+                            e.stopPropagation();
+                            setShowAssignDriver(true);
+                          }}
+                          className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          <FiUser className="h-4 w-4" />
+                          {route.delivery ? 'Reasignar Repartidor' : 'Asignar Repartidor'}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            if (!isActive) return;
+                            e.stopPropagation();
+                            setShowCancelConfirmation(true);
+                          }}
+                          className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                        >
+                          Cancelar Ruta
+                        </button>
+                      </>
                     )}
                     {!canRemoveOrders && route.localStatus !== "closed" && (
                       <button
@@ -263,6 +388,65 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
                 </div>
 
                 <div className="space-y-6">
+                  {/* Route Info - Date Editing */}
+                  {route.localStatus === "created" && (
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Fecha programada
+                          </label>
+                          {isEditingDate ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="date"
+                                value={editedDate}
+                                onChange={(e) => setEditedDate(e.target.value)}
+                                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                disabled={isSavingDate}
+                              />
+                              <button
+                                onClick={handleSaveDate}
+                                disabled={isSavingDate}
+                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {isSavingDate ? 'Guardando...' : 'Guardar'}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (route?.scheduledDate) {
+                                    const date = new Date(route.scheduledDate);
+                                    const year = date.getFullYear();
+                                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                                    const day = String(date.getDate()).padStart(2, '0');
+                                    setEditedDate(`${year}-${month}-${day}`);
+                                  }
+                                  setIsEditingDate(false);
+                                }}
+                                disabled={isSavingDate}
+                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-900 font-medium">
+                                {route.scheduledDate ? new Date(route.scheduledDate).toLocaleDateString('es-AR') : 'No definida'}
+                              </span>
+                              <button
+                                onClick={() => setIsEditingDate(true)}
+                                className="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                              >
+                                Editar fecha
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Orders Table */}
                   <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                     <table className="min-w-full text-sm">
@@ -463,6 +647,93 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
           }
         }}
       />
+
+      {/* Cancel Route Confirmation Dialog */}
+      {showCancelConfirmation && (
+        <Transition appear show={showCancelConfirmation} as={Fragment}>
+          <HeadlessDialog as="div" className="relative z-[100]" onClose={() => setShowCancelConfirmation(false)}>
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <div className="fixed inset-0 bg-black/50" />
+            </Transition.Child>
+
+            <div className="fixed inset-0 overflow-y-auto">
+              <div className="flex min-h-full items-center justify-center p-4 text-center">
+                <Transition.Child
+                  as={Fragment}
+                  enter="ease-out duration-300"
+                  enterFrom="opacity-0 scale-95"
+                  enterTo="opacity-100 scale-100"
+                  leave="ease-in duration-200"
+                  leaveFrom="opacity-100 scale-100"
+                  leaveTo="opacity-0 scale-95"
+                >
+                  <HeadlessDialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <FiAlertTriangle className="h-6 w-6 text-red-600" />
+                      </div>
+                      <div>
+                        <HeadlessDialog.Title
+                          as="h3"
+                          className="text-lg font-semibold text-gray-900"
+                        >
+                          Cancelar Ruta
+                        </HeadlessDialog.Title>
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <p className="text-sm text-gray-600 mb-4">
+                        ¿Estás seguro de que deseas cancelar la ruta <strong>#{route.id.toString().padStart(6, '0')}</strong>?
+                      </p>
+                      <p className="text-sm text-red-600 font-medium">
+                        Esta acción no se puede deshacer.
+                      </p>
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowCancelConfirmation(false)}
+                        disabled={isCanceling}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        No, mantener
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelRoute}
+                        disabled={isCanceling}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {isCanceling ? (
+                          <>
+                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Cancelando...
+                          </>
+                        ) : (
+                          'Sí, cancelar ruta'
+                        )}
+                      </button>
+                    </div>
+                  </HeadlessDialog.Panel>
+                </Transition.Child>
+              </div>
+            </div>
+          </HeadlessDialog>
+        </Transition>
+      )}
     </Transition>
   );
 }

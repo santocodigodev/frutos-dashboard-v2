@@ -34,6 +34,7 @@ export default function AssignRouteDialog({
 }: AssignRouteDialogProps) {
   const [routes, setRoutes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAssigning, setIsAssigning] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<number | null>(null);
   const [isCreateRouteOpen, setIsCreateRouteOpen] = useState(false);
   const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || '{}') : {};
@@ -74,6 +75,7 @@ export default function AssignRouteDialog({
   const handleAssignRoute = async () => {
     if (!selectedRoute) return;
 
+    setIsAssigning(true);
     try {
       const response = await fetch(getApiUrl(`/route/${selectedRoute}`), {
         method: 'PATCH',
@@ -91,22 +93,31 @@ export default function AssignRouteDialog({
         // Wait for backend response before refreshing
         const result = await response.json();
         if (result) {
+          // Actualizar primero los datos - esto actualiza el contexto que usa el Sidebar
           await Promise.all([
             refreshOrders(),
             refreshRutas(),
             refreshCounts()
           ]);
-          router.refresh();
+          
+          // Llamar al callback antes de cerrar
           if (onRouteAssigned) {
-            onRouteAssigned();
+            await onRouteAssigned();
           }
+          
+          // Recargar la página para actualizar el sidebar (como se hace en RouteDetailDialog)
+          window.location.reload();
         }
         onClose();
       } else {
         console.error('Error assigning route:', response.statusText);
+        alert('Error al asignar órdenes a la ruta. Por favor intente nuevamente.');
       }
     } catch (error) {
       console.error('Error assigning route:', error);
+      alert('Error al asignar órdenes a la ruta. Por favor intente nuevamente.');
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -143,7 +154,7 @@ export default function AssignRouteDialog({
               
               <div className="mb-6">
                 <p className="text-gray-600">Zona: <span className="font-semibold">{zone}</span></p>
-                <p className="text-gray-600">Zona horaria: <span className="font-semibold">{timezone}</span></p>
+                <p className="text-gray-600">Franja horaria: <span className="font-semibold">{timezone}</span></p>
                 <p className="text-gray-600">Pedidos seleccionados: <span className="font-semibold">{selectedOrders.length}</span></p>
                 {totalKg > 0 && (
                   <p className="text-gray-600">Peso total: <span className="font-semibold">{totalKg.toFixed(2)} kg</span></p>
@@ -217,10 +228,20 @@ export default function AssignRouteDialog({
               </button>
               <button
                 onClick={handleAssignRoute}
-                disabled={!selectedRoute}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-700 transition-colors"
+                disabled={!selectedRoute || isAssigning}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-700 transition-colors flex items-center gap-2"
               >
-                Asignar a ruta
+                {isAssigning ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Asignando...
+                  </>
+                ) : (
+                  'Asignar a ruta'
+                )}
               </button>
             </div>
           </Dialog.Panel>

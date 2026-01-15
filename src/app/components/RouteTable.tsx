@@ -35,7 +35,7 @@ export default function RouteTable({ routes, onRouteClick }: RouteTableProps) {
             <th className="py-2 px-3">Horarios</th>
             <th className="py-2 px-3">Pedidos</th>
             <th className="py-2 px-3">Repartidor</th>
-            <th className="py-2 px-3"></th>
+            {onRouteClick && <th className="py-2 px-3"></th>}
           </tr>
         </thead>
         <tbody>
@@ -47,18 +47,18 @@ export default function RouteTable({ routes, onRouteClick }: RouteTableProps) {
               <td className="py-2 px-3">{ruta.timeZone?.name || 'N/A'}</td>
               <td className="py-2 px-3">{ruta.orders?.length || 0}</td>
               <td className="py-2 px-3">{ruta.delivery?.name || 'Sin asignar'}</td>
-              <td className="py-2 px-3">
-                <button
-                  className="bg-purple-600 text-white px-3 py-1 rounded text-xs"
-                  onClick={() => {
-                    if (onRouteClick) {
+              {onRouteClick && (
+                <td className="py-2 px-3">
+                  <button
+                    className="bg-purple-600 text-white px-3 py-1 rounded text-xs"
+                    onClick={() => {
                       onRouteClick(ruta);
-                    }
-                  }}
-                >
-                  Detalle
-                </button>
-              </td>
+                    }}
+                  >
+                    Detalle
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

@@ -5,6 +5,7 @@ import { getApiUrl } from '../../utils/api';
 interface SidebarRutasContextType {
   rutasCreadas: number;
   rutasActivas: number;
+  rutasPorRendir: number;
   loading: boolean;
   refreshCounts: () => Promise<void>;
 }
@@ -12,6 +13,7 @@ interface SidebarRutasContextType {
 const SidebarRutasContext = createContext<SidebarRutasContextType>({
   rutasCreadas: 0,
   rutasActivas: 0,
+  rutasPorRendir: 0,
   loading: true,
   refreshCounts: async () => {},
 });
@@ -19,6 +21,7 @@ const SidebarRutasContext = createContext<SidebarRutasContextType>({
 export function SidebarRutasProvider({ children }: { children: React.ReactNode }) {
   const [rutasCreadas, setRutasCreadas] = useState(0);
   const [rutasActivas, setRutasActivas] = useState(0);
+  const [rutasPorRendir, setRutasPorRendir] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const fetchCounts = async () => {
@@ -28,10 +31,12 @@ export function SidebarRutasProvider({ children }: { children: React.ReactNode }
         console.error('No user token found');
         setRutasCreadas(0);
         setRutasActivas(0);
+        setRutasPorRendir(0);
         setLoading(false);
         return;
       }
 
+      // Fetch routes with status created and active
       const response = await fetch(getApiUrl('/route?filter=localStatus||$in||active,created'), {
         headers: {
           'accept': 'application/json',
@@ -54,10 +59,27 @@ export function SidebarRutasProvider({ children }: { children: React.ReactNode }
       
       setRutasCreadas(creadas);
       setRutasActivas(activas);
+
+      // Fetch routes with status closed (por rendir)
+      const responsePorRendir = await fetch(getApiUrl('/route?filter=localStatus||$eq||closed'), {
+        headers: {
+          'accept': 'application/json',
+          'token': user.token
+        }
+      });
+
+      if (responsePorRendir.ok) {
+        const dataPorRendir = await responsePorRendir.json();
+        const routesPorRendir = Array.isArray(dataPorRendir) ? dataPorRendir : (dataPorRendir.routes && Array.isArray(dataPorRendir.routes) ? dataPorRendir.routes : []);
+        setRutasPorRendir(routesPorRendir.length);
+      } else {
+        setRutasPorRendir(0);
+      }
     } catch (error) {
       console.error('Error fetching route counts:', error);
       setRutasCreadas(0);
       setRutasActivas(0);
+      setRutasPorRendir(0);
     } finally {
       setLoading(false);
     }
@@ -73,7 +95,7 @@ export function SidebarRutasProvider({ children }: { children: React.ReactNode }
   };
 
   return (
-    <SidebarRutasContext.Provider value={{ rutasCreadas, rutasActivas, loading, refreshCounts }}>
+    <SidebarRutasContext.Provider value={{ rutasCreadas, rutasActivas, rutasPorRendir, loading, refreshCounts }}>
       {children}
     </SidebarRutasContext.Provider>
   );

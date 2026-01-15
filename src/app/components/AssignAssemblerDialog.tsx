@@ -67,9 +67,10 @@ export default function AssignAssemblerDialog({
       if (response.ok) {
         await Promise.all([
           refreshOrders(),
-          refreshCounts(),
-          router.refresh()
+          refreshCounts()
         ]);
+        // Recargar la página para actualizar el sidebar (como se hace en RouteDetailDialog)
+        window.location.reload();
         onClose();
       }
     } catch (error) {

@@ -23,7 +23,9 @@ const pedidoEstados = [
 const rutasMenu = [
   { label: "Creadas", href: "/rutas/creadas", estado: "created" },
   { label: "Activas", href: "/rutas/activas", estado: "active" },
-  { label: "Históricas", href: "/rutas/historicas" },
+  { label: "Por rendir", href: "/rutas/por-rendir", estado: "closed" },
+  { label: "Históricas", href: "/rutas/historicas", estado: "rendered" },
+  { label: "Canceladas", href: "/rutas/canceladas", estado: "cancelled" },
 ];
 
 const personalMenu = [
@@ -35,7 +37,7 @@ const personalMenu = [
 
 const configMenu = [
   { label: "Zonas", href: "/configuracion/zonas" },
-  { label: "Zonas Horarias", href: "/configuracion/zonas-horarias" },
+  { label: "Franjas horarias", href: "/configuracion/zonas-horarias" },
   { label: "Ubicaciones", href: "/configuracion/ubicaciones" },
   { label: "Sucursales", href: "/configuracion/sucursales" },
   { label: "Descuentos", href: "/configuracion/descuentos" },
@@ -49,7 +51,7 @@ export default function Sidebar() {
   const [user, setUser] = useState<{ name?: string; email?: string, role?: string } | null>(null);
   const pedidosContext = usePedidos?.();
   const orders = pedidosContext?.orders || [];
-  const { rutasCreadas, rutasActivas } = useSidebarRutas();
+  const { rutasCreadas, rutasActivas, rutasPorRendir } = useSidebarRutas();
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -184,9 +186,12 @@ export default function Sidebar() {
                     <span className={pathname === item.href ? "text-purple-700" : "text-black"}>{item.label}</span>
                     {item.estado && (
                       (item.estado === "created" && rutasCreadas > 0) || 
-                      (item.estado === "active" && rutasActivas > 0) ? (
+                      (item.estado === "active" && rutasActivas > 0) ||
+                      (item.estado === "closed" && rutasPorRendir > 0) ? (
                       <span className="ml-2 bg-red-600 text-white text-xs rounded-full px-2 py-0.5">
-                          {item.estado === "created" ? rutasCreadas : rutasActivas}
+                          {item.estado === "created" ? rutasCreadas : 
+                           item.estado === "active" ? rutasActivas :
+                           item.estado === "closed" ? rutasPorRendir : 0}
                       </span>
                       ) : null
                     )}
