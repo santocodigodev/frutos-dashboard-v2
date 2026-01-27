@@ -2,7 +2,7 @@
 
 import { Fragment, useState, useEffect, useRef } from 'react';
 import { Dialog as HeadlessDialog, Transition } from '@headlessui/react';
-import { FiX, FiMoreVertical, FiUser, FiAlertTriangle } from 'react-icons/fi';
+import { FiX, FiMoreVertical, FiUser, FiAlertTriangle, FiDownload } from 'react-icons/fi';
 import { createPortal } from 'react-dom';
 import LiveMapDialog from './LiveMapDialog';
 import AssignDriverDialog from './AssignDriverDialog';
@@ -295,9 +295,107 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
     setIsEditingDate(false);
   };
 
+  const getOrderPhone = (order: any) => {
+    const phone = order?.client?.phone || order?.TNOrder?.customer?.phone || order?.customer?.phone || '';
+    return String(phone).replace(/\D/g, '').trim() || null;
+  };
+
+  const formatPhoneForWhatsApp = (rawPhone: string): string => {
+    const digits = String(rawPhone ?? '').replace(/\D/g, '').trim();
+    if (!digits) return '';
+    if (digits.startsWith('54') && digits.length >= 12) {
+      return digits.slice(2);
+    }
+    return '+' + digits;
+  };
+
+  const handleExportWhatsAppNumbers = () => {
+    const phones = (route.orders || [])
+      .map((o: any) => getOrderPhone(o))
+      .filter(Boolean) as string[];
+    const formatted = phones.map((p) => formatPhoneForWhatsApp(p));
+    const uniq = [...new Set(formatted)];
+    const text = uniq.join('\n');
+    if (!text) {
+      alert('No hay números de teléfono para exportar.');
+      return;
+    }
+    navigator.clipboard.writeText(text).then(
+      () => alert('Números copiados al portapapeles. Pegá la lista en WhatsApp.'),
+      () => {
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ruta_${route.id}_numeros_whatsapp.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    );
+  };
+
+  const escapeCsv = (v: string) => {
+    const s = String(v ?? '').replace(/"/g, '""');
+    return /[;\n",]/.test(s) ? `"${s}"` : s;
+  };
+
+  const toLatin1Bytes = (s: string): Uint8Array => {
+    const out: number[] = [];
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
+      out.push(c <= 0xff ? c : 0x3f);
+    }
+    return new Uint8Array(out);
+  };
+
+  const formatPriceForExcel = (amount: number) => {
+    const n = Math.round(Number(amount) || 0);
+    const s = String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `$ ${s}`;
+  };
+
+  const handleExportExcel = () => {
+    const headers = [
+      'Franja Horaria',
+      'Observaciones del administrador',
+      'Kilos',
+      'Tipo de pago',
+      'Nombre del cliente',
+      'Numero de pedido TN',
+      'Direccion completa',
+      'Telefono del cliente',
+      'Precio del delivery',
+      'Precio total de la orden',
+    ];
+    const rows: string[][] = [
+      headers,
+      ...(route.orders || []).map((order: any) => [
+        route.timeZone?.name ?? '',
+        order.adminDetails ?? '',
+        String(order.kg ?? ''),
+        formatPaymentType(order.paymentType ?? ''),
+        order.client?.fullName ?? order.client?.name ?? '',
+        String(order.TN_Order_number ?? order.TN_ID ?? ''),
+        order.finalDestiny?.name ?? '',
+        order.client?.phone ?? '',
+        formatPriceForExcel(Number(route.zone?.price ?? 0)),
+        formatPriceForExcel(Number(order.totalToPay ?? 0)),
+      ]),
+    ];
+    const csv = rows.map((r) => r.map(escapeCsv).join(';')).join('\n');
+    const bytes = toLatin1Bytes(csv);
+    const blob = new Blob([new Uint8Array(bytes)], { type: 'text/csv;charset=ISO-8859-1' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ruta_${route.id.toString().padStart(6, '0')}_detalle.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <HeadlessDialog as="div" className={`relative z-[50] ${!isActive ? 'pointer-events-none' : ''}`} onClose={() => {}}>
+      <HeadlessDialog as="div" className="relative z-[50]" onClose={() => {}}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -378,8 +476,28 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
                         Ver en vivo
                       </button>
                     )}
+                    <span className="inline-flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleExportWhatsAppNumbers(); }}
+                        className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                        title="Copiar números para WhatsApp"
+                      >
+                        <FiDownload className="h-4 w-4" />
+                        Números WhatsApp
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleExportExcel(); }}
+                        className="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors"
+                        title="Exportar detalle de la ruta a Excel"
+                      >
+                        <FiDownload className="h-4 w-4" />
+                        Exportar Excel
+                      </button>
+                    </span>
                     <button
-                      onClick={isActive ? onClose : () => {}}
+                      onClick={onClose}
                       className="text-gray-400 hover:text-gray-500"
                     >
                       <FiX className="h-6 w-6" />

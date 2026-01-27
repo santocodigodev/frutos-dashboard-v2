@@ -72,7 +72,6 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
   const [showMap, setShowMap] = useState(false);
   const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
-  const [transactionReference, setTransactionReference] = useState("");
   const [showEvidence, setShowEvidence] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
@@ -276,13 +275,6 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
 
   // Handle payment confirmation
   const handleConfirmPayment = async () => {
-    // Validar que si es transferencia, tenga transactionReference
-    const isTransfer = editedOrder?.paymentType === PaymentTypeEnum.TRANSFER || editedOrder?.paymentType === 'transfer';
-    if (isTransfer && !transactionReference.trim()) {
-      alert('Por favor ingrese el número de transacción para transferencia');
-      return;
-    }
-
     setIsConfirmingPayment(true);
     try {
       const clientTotal = calculateClientTotal();
@@ -296,11 +288,6 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
         order: order.id,
         price: clientTotal
       };
-
-      // Solo agregar transactionReference si es transferencia
-      if (isTransfer) {
-        paymentData.transactionReference = transactionReference.trim();
-      }
 
       const paymentResponse = await fetch(getApiUrl('/payment'), {
         method: 'POST',
@@ -363,7 +350,6 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
       setOrder(updatedOrder);
       setEditedOrder(updatedOrder);
       setShowPaymentConfirmation(false);
-      setTransactionReference(""); // Limpiar el campo de transacción
       
       // Refresh order data
       setLoading(true);
@@ -779,10 +765,7 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
                  (!payment.status || payment.status === 'pending') && 
                  canEdit && !readOnly && (
                   <button 
-                    onClick={() => {
-                      setTransactionReference("");
-                      setShowPaymentConfirmation(true);
-                    }} 
+                    onClick={() => setShowPaymentConfirmation(true)} 
                     className="bg-green-600 text-white px-3 py-1 rounded text-xs ml-2 hover:bg-green-700"
                   >
                     Confirmar pago
@@ -1105,10 +1088,7 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
           <div 
             className="fixed inset-0 z-[2100] flex items-center justify-center overflow-y-auto py-8" 
             style={{ background: "rgba(0,0,0,0.4)" }}
-            onClick={() => {
-              setShowPaymentConfirmation(false);
-              setTransactionReference("");
-            }}
+            onClick={() => setShowPaymentConfirmation(false)}
           >
             <div 
               className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg p-8 min-w-[500px] max-w-2xl w-full relative my-auto mx-4"
@@ -1117,10 +1097,7 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
               {/* Header */}
               <div className="text-center mb-6">
                 <button 
-                  onClick={() => {
-                    setShowPaymentConfirmation(false);
-                    setTransactionReference("");
-                  }} 
+                  onClick={() => setShowPaymentConfirmation(false)} 
                   className="absolute top-4 right-4 text-3xl text-purple-600 hover:text-purple-800"
                 >
                   &times;
@@ -1145,23 +1122,6 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
                     </p>
                   </div>
                   
-                  {/* Campo de número de transacción solo para transferencia */}
-                  {isTransfer && (
-                    <div className="mb-4 text-left">
-                      <label className="block text-sm text-gray-700 mb-2 font-medium">
-                        Número de transacción <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={transactionReference}
-                        onChange={(e) => setTransactionReference(e.target.value)}
-                        className="w-full border rounded px-3 py-2 text-black bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        placeholder="Ingrese el número de transacción"
-                        autoFocus
-                      />
-                    </div>
-                  )}
-                  
                   <p className="text-sm text-gray-500">
                     Esta acción creará un registro de pago y actualizará el estado del pedido.
                   </p>
@@ -1171,17 +1131,14 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
               {/* Actions */}
               <div className="flex justify-center gap-4">
                 <button
-                  onClick={() => {
-                    setShowPaymentConfirmation(false);
-                    setTransactionReference("");
-                  }}
+                  onClick={() => setShowPaymentConfirmation(false)}
                   className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleConfirmPayment}
-                  disabled={isConfirmingPayment || (isTransfer && !transactionReference.trim())}
+                  disabled={isConfirmingPayment}
                   className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
                 >
                   {isConfirmingPayment ? (
