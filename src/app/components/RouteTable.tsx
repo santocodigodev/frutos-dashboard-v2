@@ -2,6 +2,7 @@
 
 interface Route {
   id: number;
+  name?: string;
   localStatus: string;
   scheduledDate: string;
   startTime: string;
@@ -29,6 +30,7 @@ export default function RouteTable({ routes, onRouteClick }: RouteTableProps) {
       <table className="min-w-full text-sm">
         <thead>
           <tr className="text-left text-gray-500">
+            <th className="py-2 px-3">Nombre</th>
             <th className="py-2 px-3">Código</th>
             <th className="py-2 px-3">Zona</th>
             <th className="py-2 px-3">Fecha</th>
@@ -41,6 +43,7 @@ export default function RouteTable({ routes, onRouteClick }: RouteTableProps) {
         <tbody>
           {routes.map((ruta) => (
             <tr key={ruta.id} className="border-t text-gray-500">
+              <td className="py-2 px-3">{ruta.name || '—'}</td>
               <td className="py-2 px-3">#{ruta.id}</td>
               <td className="py-2 px-3">{ruta.zone?.name || 'N/A'}</td>
               <td className="py-2 px-3">{new Date(ruta.scheduledDate).toLocaleDateString()}</td>

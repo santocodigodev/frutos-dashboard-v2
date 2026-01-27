@@ -27,6 +27,9 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editedDate, setEditedDate] = useState('');
   const [isSavingDate, setIsSavingDate] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isSavingName, setIsSavingName] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const buttonRefs = useRef<{ [key: number]: HTMLButtonElement | null }>({});
@@ -48,7 +51,7 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
     };
   }, [selectedOrderId]);
 
-  // Initialize edited date when route changes
+  // Initialize edited date and name when route changes
   useEffect(() => {
     if (route?.scheduledDate) {
       const date = new Date(route.scheduledDate);
@@ -57,6 +60,7 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
       const day = String(date.getDate()).padStart(2, '0');
       setEditedDate(`${year}-${month}-${day}`);
     }
+    setEditedName(route?.name ?? '');
   }, [route]);
 
   if (!route) return null;
@@ -295,6 +299,31 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
     setIsEditingDate(false);
   };
 
+  const handleSaveName = async () => {
+    if (!route?.id) return;
+    setIsSavingName(true);
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const response = await fetch(getApiUrl(`/route/${route.id}`), {
+        method: 'PATCH',
+        headers: { 'accept': 'application/json', 'token': user.token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editedName.trim() || null }),
+      });
+      if (response.ok) {
+        setIsEditingName(false);
+        if (onRouteUpdated) onRouteUpdated();
+        window.location.reload();
+      } else {
+        alert('Error al actualizar el nombre de la ruta.');
+      }
+    } catch (err) {
+      console.error('Error updating route name:', err);
+      alert('Error al actualizar el nombre de la ruta.');
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
   const getOrderPhone = (order: any) => {
     const phone = order?.client?.phone || order?.TNOrder?.customer?.phone || order?.customer?.phone || '';
     return String(phone).replace(/\D/g, '').trim() || null;
@@ -426,7 +455,7 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
                       as="h3"
                       className="text-xl font-semibold text-gray-900"
                     >
-                      Detalle de la ruta #{route.id.toString().padStart(6, '0')}
+                      {route.name ? `Detalle de la ruta: ${route.name} (#${route.id.toString().padStart(6, '0')})` : `Detalle de la ruta #${route.id.toString().padStart(6, '0')}`}
                     </HeadlessDialog.Title>
                     {routeStatus && (
                       <div className={`mt-1 inline-block px-3 py-1 rounded-full text-sm font-medium ${
@@ -506,9 +535,37 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
                 </div>
 
                 <div className="space-y-6">
-                  {/* Route Info - Date Editing */}
+                  {/* Route Info - Name and Date Editing */}
                   {route.localStatus === "created" && (
-                    <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Nombre de la ruta</label>
+                        {isEditingName ? (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <input
+                              type="text"
+                              value={editedName}
+                              onChange={(e) => setEditedName(e.target.value)}
+                              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 flex-1 min-w-[200px]"
+                              placeholder="Ej: Ruta Palermo mañana"
+                              disabled={isSavingName}
+                            />
+                            <button type="button" onClick={handleSaveName} disabled={isSavingName} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                              {isSavingName ? 'Guardando...' : 'Guardar'}
+                            </button>
+                            <button type="button" onClick={() => { setEditedName(route?.name ?? ''); setIsEditingName(false); }} disabled={isSavingName} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                              Cancelar
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-900 font-medium">{route.name || 'Sin nombre'}</span>
+                            <button type="button" onClick={() => setIsEditingName(true)} className="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                              Editar nombre
+                            </button>
+                          </div>
+                        )}
+                      </div>
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <label className="block text-sm font-medium text-gray-700 mb-2">

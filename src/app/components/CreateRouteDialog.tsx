@@ -30,6 +30,7 @@ export default function CreateRouteDialog({ open, onClose, onRouteCreated }: Cre
   const [zones, setZones] = useState<Zone[]>([]);
   const [timeZones, setTimeZones] = useState<TimeZone[]>([]);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [name, setName] = useState<string>('');
   const [selectedZone, setSelectedZone] = useState<number | string>('');
   const [selectedTimeZone, setSelectedTimeZone] = useState<number | string>('');
   const [selectedDelivery, setSelectedDelivery] = useState<number | string>('');
@@ -71,13 +72,12 @@ export default function CreateRouteDialog({ open, onClose, onRouteCreated }: Cre
 
     if (open) {
       fetchData();
-      // Reset form state when dialog opens
+      setName('');
       setSelectedZone('');
       setSelectedTimeZone('');
       setSelectedDelivery('');
       setScheduledDate('');
       setObservations('');
-
     }
   }, [open, onClose]); // Add onClose to dependencies
 
@@ -131,10 +131,11 @@ export default function CreateRouteDialog({ open, onClose, onRouteCreated }: Cre
         }
 
       const newRoute: any = {
+        name: name.trim() || undefined,
         zone: selectedZone,
         observations: observations,
         timeZone: selectedTimeZone,
-        scheduledDate: scheduledDateTime, 
+        scheduledDate: scheduledDateTime,
       };
 
       // Conditionally add delivery if selected
@@ -189,6 +190,10 @@ export default function CreateRouteDialog({ open, onClose, onRouteCreated }: Cre
           <div className="text-center text-gray-500">Cargando datos del formulario...</div>
         ) : (
           <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+            <div className="mb-6">
+              <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="routeName">Nombre de la ruta</label>
+              <input id="routeName" type="text" className="shadow-sm border border-gray-300 rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-purple-500 focus:border-purple-500" value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Ruta Palermo mañana" />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="zone">Zona</label>
