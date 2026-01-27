@@ -3,6 +3,7 @@ import { getFormattedDeliveryType } from "../utils/formatDeliveryType";
 import OrderDetailDialog from "./OrderDetailDialog";
 import { useState } from "react";
 import { getFormattedStatus } from "../utils/formatStatus";
+import { usePedidos } from "../(protected)/pedidos/PedidosContext";
 
 interface Order {
   o_id: number;
@@ -16,10 +17,27 @@ interface Order {
   o_totalToPay: number;
 }
 
+function SortableTh({ label, fieldKey, sortField, sortOrder, onSort }: { label: string; fieldKey: string; sortField: string; sortOrder: 'asc' | 'desc'; onSort: (f: string) => void }) {
+  const active = sortField === fieldKey;
+  return (
+    <th className="py-2 px-3">
+      <button type="button" onClick={() => onSort(fieldKey)} className="text-left font-medium hover:text-purple-600 flex items-center gap-1">
+        {label}
+        {active && <span className="text-purple-600">{sortOrder === 'asc' ? ' ↑' : ' ↓'}</span>}
+      </button>
+    </th>
+  );
+}
+
 export default function OrdersTable({ orders, isMain = false, readOnly = false }: { orders: Order[], isMain: boolean, readOnly?: boolean }) {
   const [showDialog, setShowDialog] = useState(false);
   const [selectedOrderNumber, setSelectedOrderNumber] = useState<number | null>(null);
+  const { sortField = '', sortOrder = 'asc', setSort } = usePedidos();
   const formatMoney = (n: any) => `$${Number(n).toLocaleString("es-AR")}`;
+
+  const handleSort = (field: string) => {
+    setSort(field, sortField === field && sortOrder === 'asc' ? 'desc' : 'asc');
+  };
 
   if (!orders.length) {
     return (
@@ -33,13 +51,13 @@ export default function OrdersTable({ orders, isMain = false, readOnly = false }
       <table className="min-w-full text-sm">
         <thead>
           <tr className="text-left text-gray-500">
-            <th className="py-2 px-3">Nº Orden</th>
-            <th className="py-2 px-3">Método de pago</th>
-            <th className="py-2 px-3">Tipo de entrega</th>
+            <SortableTh label="Nº Orden" fieldKey="TN_Order_number" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+            <SortableTh label="Método de pago" fieldKey="paymentType" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+            <SortableTh label="Tipo de entrega" fieldKey="shipmentType" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
             <th className="py-2 px-3">Zona</th>
-            {isMain ? (<th className="py-2 px-3">Estado</th>) : ""}
-            <th className="py-2 px-3">Subtotal</th>
-            <th className="py-2 px-3">Fecha de compra</th>
+            {isMain ? (<SortableTh label="Estado" fieldKey="localStatus" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />) : null}
+            <SortableTh label="Subtotal" fieldKey="totalToPay" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+            <SortableTh label="Fecha de compra" fieldKey="createdAt" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
             <th className="py-2 px-3"></th>
           </tr>
         </thead>

@@ -22,18 +22,36 @@ interface Route {
 interface RouteTableProps {
   routes: Route[];
   onRouteClick?: (route: Route) => void;
+  sortField?: string;
+  sortOrder?: 'asc' | 'desc';
+  onSort?: (field: string) => void;
 }
 
-export default function RouteTable({ routes, onRouteClick }: RouteTableProps) {
+function SortableTh({ label, fieldKey, sortField, sortOrder, onSort }: { label: string; fieldKey: string; sortField?: string; sortOrder?: 'asc' | 'desc'; onSort?: (f: string) => void }) {
+  if (!onSort) {
+    return <th className="py-2 px-3">{label}</th>;
+  }
+  const active = sortField === fieldKey;
+  return (
+    <th className="py-2 px-3">
+      <button type="button" onClick={() => onSort(fieldKey)} className="text-left font-medium hover:text-purple-600 flex items-center gap-1">
+        {label}
+        {active && <span className="text-purple-600">{sortOrder === 'asc' ? ' ↑' : ' ↓'}</span>}
+      </button>
+    </th>
+  );
+}
+
+export default function RouteTable({ routes, onRouteClick, sortField, sortOrder, onSort }: RouteTableProps) {
   return (
     <div className="bg-white rounded-lg shadow p-4 w-full overflow-x-auto">
       <table className="min-w-full text-sm">
         <thead>
           <tr className="text-left text-gray-500">
-            <th className="py-2 px-3">Nombre</th>
-            <th className="py-2 px-3">Código</th>
+            <SortableTh label="Nombre" fieldKey="name" sortField={sortField} sortOrder={sortOrder} onSort={onSort} />
+            <SortableTh label="Código" fieldKey="id" sortField={sortField} sortOrder={sortOrder} onSort={onSort} />
             <th className="py-2 px-3">Zona</th>
-            <th className="py-2 px-3">Fecha</th>
+            <SortableTh label="Fecha" fieldKey="scheduledDate" sortField={sortField} sortOrder={sortOrder} onSort={onSort} />
             <th className="py-2 px-3">Horarios</th>
             <th className="py-2 px-3">Pedidos</th>
             <th className="py-2 px-3">Repartidor</th>

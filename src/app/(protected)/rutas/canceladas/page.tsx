@@ -11,12 +11,16 @@ export default function RutasCanceladas() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
+  const [sortField, setSortField] = useState<string>('id');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const fetchRutasCanceladas = async () => {
     try {
       setLoading(true);
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const response = await fetch(getApiUrl(`/route/by-status?status=cancelled&page=${page}&limit=${limit}`), {
+      let url = `/route/by-status?status=cancelled&page=${page}&limit=${limit}`;
+      url += `&sortBy=${encodeURIComponent(sortField)}&sort=${sortOrder === 'asc' ? 'ASC' : 'DESC'}`;
+      const response = await fetch(getApiUrl(url), {
         headers: {
           'accept': 'application/json',
           'token': user.token
@@ -38,7 +42,12 @@ export default function RutasCanceladas() {
 
   useEffect(() => {
     fetchRutasCanceladas();
-  }, [page]);
+  }, [page, sortField, sortOrder]);
+
+  const handleSort = (field: string) => {
+    setSortOrder((prev) => (sortField === field && prev === 'asc' ? 'desc' : 'asc'));
+    setSortField(field);
+  };
 
   if (loading) return <div className="text-gray-500">Cargando...</div>;
 
@@ -53,7 +62,7 @@ export default function RutasCanceladas() {
         <div className="text-gray-500">No hay rutas canceladas.</div>
       ) : (
         <>
-          <RouteTable routes={rutas} />
+          <RouteTable routes={rutas} sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
           
           {/* Paginación */}
           <div className="flex justify-center gap-2 mt-4">

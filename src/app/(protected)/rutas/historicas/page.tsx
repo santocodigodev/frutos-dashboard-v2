@@ -14,6 +14,8 @@ export default function RutasHistoricas() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
+  const [sortField, setSortField] = useState<string>('id');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedRoute, setSelectedRoute] = useState<any>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [loadingRoute, setLoadingRoute] = useState(false);
@@ -33,7 +35,9 @@ export default function RutasHistoricas() {
     try {
       setLoading(true);
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const response = await fetch(getApiUrl(`/route/by-status?status=rendered&page=${page}&limit=${limit}`), {
+      let url = `/route/by-status?status=rendered&page=${page}&limit=${limit}`;
+      url += `&sortBy=${encodeURIComponent(sortField)}&sort=${sortOrder === 'asc' ? 'ASC' : 'DESC'}`;
+      const response = await fetch(getApiUrl(url), {
         headers: {
           'accept': 'application/json',
           'token': user.token
@@ -55,7 +59,12 @@ export default function RutasHistoricas() {
 
   useEffect(() => {
     fetchRutasHistoricas();
-  }, [page]);
+  }, [page, sortField, sortOrder]);
+
+  const handleSort = (field: string) => {
+    setSortOrder((prev) => (sortField === field && prev === 'asc' ? 'desc' : 'asc'));
+    setSortField(field);
+  };
 
   const handleRouteClick = async (route: any) => {
     setLoadingRoute(true);
@@ -124,7 +133,7 @@ export default function RutasHistoricas() {
         <div className="text-gray-500">No hay rutas históricas.</div>
       ) : (
         <>
-          <RouteTable routes={rutas} onRouteClick={handleRouteClick} />
+          <RouteTable routes={rutas} onRouteClick={handleRouteClick} sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
           
           {/* Paginación */}
           <div className="flex justify-center gap-2 mt-4">

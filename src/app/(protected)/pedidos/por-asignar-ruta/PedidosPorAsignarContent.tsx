@@ -58,6 +58,8 @@ export default function PedidosPorAsignarContent() {
   const [isCreateRouteOpen, setIsCreateRouteOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [selectedOrderNumber, setSelectedOrderNumber] = useState<number | null>(null);
+  const [tableSortField, setTableSortField] = useState<string>('id');
+  const [tableSortOrder, setTableSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Initialize user from localStorage on client-side
   useEffect(() => {
@@ -299,8 +301,63 @@ export default function PedidosPorAsignarContent() {
   const availableZones = Array.from(new Set((orders || []).map((o: any) => o.zone).filter(Boolean)));
   const availableTimezones = Array.from(new Set((orders || []).map((o: any) => o.timezone).filter(Boolean)));
 
+  // Conteo de órdenes por zona (solo pending_route_assignment)
+  const countByZone = useMemo(() => {
+    const counts: Record<string, number> = {};
+    (orders || []).forEach((o: any) => {
+      if (o.o_localStatus !== "pending_route_assignment" || !o.zone) return;
+      counts[o.zone] = (counts[o.zone] ?? 0) + 1;
+    });
+    return counts;
+  }, [orders]);
+
+  // Conteo de órdenes por franja horaria en la zona seleccionada
+  const countByTimezone = useMemo(() => {
+    if (selectedZone === undefined) return {};
+    const counts: Record<string, number> = {};
+    (orders || []).forEach((o: any) => {
+      if (o.o_localStatus !== "pending_route_assignment" || o.zone !== selectedZone || !o.timezone) return;
+      counts[o.timezone] = (counts[o.timezone] ?? 0) + 1;
+    });
+    return counts;
+  }, [orders, selectedZone]);
+
   // fullOrders ya viene filtrado por filteredOrderIds basado en zona y timezone
   const filtered = fullOrders;
+
+  const getSortValue = (order: any, field: string): string | number => {
+    switch (field) {
+      case 'id': return order.id ?? 0;
+      case 'TN_Order_number': return order.TN_Order_number ?? order.id ?? 0;
+      case 'paymentType': return (order.paymentType || order.TNOrder?.gateway_name || '').toString().toLowerCase();
+      case 'shipmentType': return (order.shipmentType || order.TNOrder?.gateway || '').toString().toLowerCase();
+      case 'totalToPay': return Number(order.totalToPay ?? order.TNOrder?.total ?? 0);
+      case 'zone': return (typeof order.zone === 'object' ? order.zone?.name : order.zone || '').toString().toLowerCase();
+      case 'timezone': {
+        const tz = order.timezone || order.timeZone;
+        return (typeof tz === 'object' ? tz?.name : tz || '').toString().toLowerCase();
+      }
+      case 'address': return (order.finalDestiny?.address || order.finalDestiny?.name || order.default_address?.address || order.TNOrder?.default_address?.address || '').toString().toLowerCase();
+      default: return order.id ?? 0;
+    }
+  };
+
+  const sortedForTable = useMemo(() => {
+    const list = [...filtered];
+    const dir = tableSortOrder === 'asc' ? 1 : -1;
+    list.sort((a: any, b: any) => {
+      const va = getSortValue(a, tableSortField);
+      const vb = getSortValue(b, tableSortField);
+      if (typeof va === 'number' && typeof vb === 'number') return dir * (va - vb);
+      return dir * String(va).localeCompare(String(vb));
+    });
+    return list;
+  }, [filtered, tableSortField, tableSortOrder]);
+
+  const handleTableSort = (field: string) => {
+    setTableSortOrder((prev) => (tableSortField === field && prev === 'asc' ? 'desc' : 'asc'));
+    setTableSortField(field);
+  };
 
   // Calculate total KG of selected orders
   const totalKg = useMemo(() => {
@@ -378,37 +435,49 @@ export default function PedidosPorAsignarContent() {
       </div>
       {/* Tabs de zonas */}
       <div className="flex gap-6 mb-4 border-b">
-        {zones.map((zone: any) => (
-          <button
-            key={zone.id}
-            onClick={() => setSelectedZone(zone.name)}
-            className={`px-4 py-2 font-semibold ${
-              selectedZone === zone.name
-                ? 'border-b-2 border-purple-600 text-purple-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {zone.name}
-          </button>
-        ))}
+        {zones.map((zone: any) => {
+          const count = countByZone[zone.name] ?? 0;
+          return (
+            <button
+              key={zone.id}
+              onClick={() => setSelectedZone(zone.name)}
+              className={`px-4 py-2 font-semibold flex items-center gap-2 ${
+                selectedZone === zone.name
+                  ? 'border-b-2 border-purple-600 text-purple-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {zone.name}
+              <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-medium bg-red-500 text-white">
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Tabs de timezones */}
       {selectedZone && (
         <div className="flex gap-6 mb-4 border-b">
-          {timezones.map((timezone: any) => (
-            <button
-              key={timezone.id}
-              onClick={() => setSelectedTimezone(timezone.name)}
-              className={`px-4 py-2 font-semibold ${
-                selectedTimezone === timezone.name
-                  ? 'border-b-2 border-purple-600 text-purple-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {timezone.name}
-            </button>
-          ))}
+          {timezones.map((timezone: any) => {
+            const count = countByTimezone[timezone.name] ?? 0;
+            return (
+              <button
+                key={timezone.id}
+                onClick={() => setSelectedTimezone(timezone.name)}
+                className={`px-4 py-2 font-semibold flex items-center gap-2 ${
+                  selectedTimezone === timezone.name
+                    ? 'border-b-2 border-purple-600 text-purple-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {timezone.name}
+                <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-medium bg-red-500 text-white">
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -535,18 +604,53 @@ export default function PedidosPorAsignarContent() {
                           className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
                         />
                       </th>
-                      <th className="py-3 px-4 font-semibold">Nº Orden</th>
-                      <th className="py-3 px-4 font-semibold">Método de pago</th>
-                      <th className="py-3 px-4 font-semibold">Tipo de entrega</th>
-                      <th className="py-3 px-4 font-semibold">Zona</th>
-                      <th className="py-3 px-4 font-semibold">Franja horaria</th>
-                      <th className="py-3 px-4 font-semibold">Total</th>
-                      <th className="py-3 px-4 font-semibold">Dirección</th>
+                      <th className="py-3 px-4 font-semibold">
+                        <button type="button" onClick={() => handleTableSort('id')} className="text-left hover:text-purple-600 flex items-center gap-1">
+                          Nº Orden
+                          {tableSortField === 'id' && <span className="text-purple-600">{tableSortOrder === 'asc' ? ' ↑' : ' ↓'}</span>}
+                        </button>
+                      </th>
+                      <th className="py-3 px-4 font-semibold">
+                        <button type="button" onClick={() => handleTableSort('paymentType')} className="text-left hover:text-purple-600 flex items-center gap-1">
+                          Método de pago
+                          {tableSortField === 'paymentType' && <span className="text-purple-600">{tableSortOrder === 'asc' ? ' ↑' : ' ↓'}</span>}
+                        </button>
+                      </th>
+                      <th className="py-3 px-4 font-semibold">
+                        <button type="button" onClick={() => handleTableSort('shipmentType')} className="text-left hover:text-purple-600 flex items-center gap-1">
+                          Tipo de entrega
+                          {tableSortField === 'shipmentType' && <span className="text-purple-600">{tableSortOrder === 'asc' ? ' ↑' : ' ↓'}</span>}
+                        </button>
+                      </th>
+                      <th className="py-3 px-4 font-semibold">
+                        <button type="button" onClick={() => handleTableSort('zone')} className="text-left hover:text-purple-600 flex items-center gap-1">
+                          Zona
+                          {tableSortField === 'zone' && <span className="text-purple-600">{tableSortOrder === 'asc' ? ' ↑' : ' ↓'}</span>}
+                        </button>
+                      </th>
+                      <th className="py-3 px-4 font-semibold">
+                        <button type="button" onClick={() => handleTableSort('timezone')} className="text-left hover:text-purple-600 flex items-center gap-1">
+                          Franja horaria
+                          {tableSortField === 'timezone' && <span className="text-purple-600">{tableSortOrder === 'asc' ? ' ↑' : ' ↓'}</span>}
+                        </button>
+                      </th>
+                      <th className="py-3 px-4 font-semibold">
+                        <button type="button" onClick={() => handleTableSort('totalToPay')} className="text-left hover:text-purple-600 flex items-center gap-1">
+                          Total
+                          {tableSortField === 'totalToPay' && <span className="text-purple-600">{tableSortOrder === 'asc' ? ' ↑' : ' ↓'}</span>}
+                        </button>
+                      </th>
+                      <th className="py-3 px-4 font-semibold">
+                        <button type="button" onClick={() => handleTableSort('address')} className="text-left hover:text-purple-600 flex items-center gap-1">
+                          Dirección
+                          {tableSortField === 'address' && <span className="text-purple-600">{tableSortOrder === 'asc' ? ' ↑' : ' ↓'}</span>}
+                        </button>
+                      </th>
                       <th className="py-3 px-4 font-semibold text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {filtered.map((order: any) => {
+                    {sortedForTable.map((order: any) => {
                       const isSelected = selectedMarkers.get(order.id) || false;
                       return (
                       <tr key={order.id} className={`hover:bg-gray-50 transition-colors ${isSelected ? 'bg-purple-50' : ''}`}>
