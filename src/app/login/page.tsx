@@ -39,7 +39,7 @@ export default function Login() {
   }
 
   return (
-    <>
+    <div className="w-full flex items-center justify-center">
       {loading && <LoadingDialog text="Iniciando sesión..." />}
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg flex flex-col items-center">
         <Image src="/assets/logo.png" alt="Logo" width={60} height={60} className="mb-4" />
@@ -78,6 +78,6 @@ export default function Login() {
           {error && <div className="text-red-600 text-sm">{error}</div>}
         </form>
       </div>
-    </>
+    </div>
   );
 }

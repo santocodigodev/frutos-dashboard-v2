@@ -32,7 +32,7 @@ function SortableTh({ label, fieldKey, sortField, sortOrder, onSort }: { label: 
 export default function OrdersTable({ orders, isMain = false, readOnly = false }: { orders: Order[], isMain: boolean, readOnly?: boolean }) {
   const [showDialog, setShowDialog] = useState(false);
   const [selectedOrderNumber, setSelectedOrderNumber] = useState<number | null>(null);
-  const { sortField = '', sortOrder = 'asc', setSort } = usePedidos();
+  const { sortField = 'id', sortOrder = 'desc', setSort } = usePedidos();
   const formatMoney = (n: any) => `$${Number(n).toLocaleString("es-AR")}`;
 
   const handleSort = (field: string) => {
@@ -51,7 +51,7 @@ export default function OrdersTable({ orders, isMain = false, readOnly = false }
       <table className="min-w-full text-sm">
         <thead>
           <tr className="text-left text-gray-500">
-            <SortableTh label="Nº Orden" fieldKey="TN_Order_number" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
+            <SortableTh label="Nº Orden" fieldKey="id" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
             <SortableTh label="Método de pago" fieldKey="paymentType" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
             <SortableTh label="Tipo de entrega" fieldKey="shipmentType" sortField={sortField} sortOrder={sortOrder} onSort={handleSort} />
             <th className="py-2 px-3">Zona</th>
