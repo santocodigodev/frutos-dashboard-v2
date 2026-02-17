@@ -497,7 +497,7 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
                         </button>
                       </>
                     )}
-                    {!canRemoveOrders && route.localStatus !== "closed" && (
+                    {!canRemoveOrders && (route.localStatus === "created" || route.localStatus === "active") && (
                       <button
                         onClick={(e) => {
                           if (!isActive) return;
