@@ -127,7 +127,11 @@ export default function RouteDetailDialog({ isOpen, onClose, route, onRouteUpdat
       'confirmed_sales': 'Ventas confirmadas'
     };
     
-    // Use localStatus as primary source, only override if there's evidence of delivery failure
+    // Siempre mostrar el estado específico de la orden (cancelado, devuelto, etc.)
+    if (order.localStatus && statusMap[order.localStatus]) {
+      return statusMap[order.localStatus];
+    }
+    // Solo "No entregado" cuando hay evidencia de fallo y no es un estado terminal conocido
     if (order.shipmentFailedEvidence && !order.shipmentDeliveredEvidence) {
       return 'No entregado';
     }
