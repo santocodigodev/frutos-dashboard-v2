@@ -441,6 +441,11 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
   const products = tn.products || [];
   const payment = (order.payment && order.payment[0]) || {};
   const zone = order.zone || {};
+  const isCanceled = order?.localStatus === 'canceled';
+  const isEffectiveOrTransferPayment = editedOrder?.paymentType === PaymentTypeEnum.EFFECTIVE || editedOrder?.paymentType === 'effective' ||
+    editedOrder?.paymentType === PaymentTypeEnum.TRANSFER || editedOrder?.paymentType === 'transfer';
+  const paymentPending = !payment.status || payment.status === 'pending';
+  const canMarkAsPaid = !isCanceled && !readOnly && isEffectiveOrTransferPayment && paymentPending;
   const timeZone = order.timeZone || {};
   console.log(timeZone);
 
@@ -760,10 +765,7 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
                     Ver comprobante
                   </button>
                 )}
-                {((editedOrder?.paymentType === PaymentTypeEnum.EFFECTIVE || editedOrder?.paymentType === 'effective' ||
-                   editedOrder?.paymentType === PaymentTypeEnum.TRANSFER || editedOrder?.paymentType === 'transfer')) && 
-                 (!payment.status || payment.status === 'pending') && 
-                 canEdit && !readOnly && (
+                {canMarkAsPaid && (
                   <button 
                     onClick={() => setShowPaymentConfirmation(true)} 
                     className="bg-green-600 text-white px-3 py-1 rounded text-xs ml-2 hover:bg-green-700"
