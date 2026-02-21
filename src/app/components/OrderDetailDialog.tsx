@@ -442,10 +442,11 @@ export default function OrderDetailDialog({ o_TN_Order_number, onClose, readOnly
   const payment = (order.payment && order.payment[0]) || {};
   const zone = order.zone || {};
   const isCanceled = order?.localStatus === 'canceled';
-  const isEffectiveOrTransferPayment = editedOrder?.paymentType === PaymentTypeEnum.EFFECTIVE || editedOrder?.paymentType === 'effective' ||
-    editedOrder?.paymentType === PaymentTypeEnum.TRANSFER || editedOrder?.paymentType === 'transfer';
+  const paymentType = editedOrder?.paymentType ?? order?.paymentType ?? tn?.gateway_name ?? '';
+  const isEffectiveOrTransferPayment = paymentType === PaymentTypeEnum.EFFECTIVE || paymentType === 'effective' ||
+    paymentType === PaymentTypeEnum.TRANSFER || paymentType === 'transfer';
   const paymentPending = !payment.status || payment.status === 'pending';
-  const canMarkAsPaid = !isCanceled && !readOnly && isEffectiveOrTransferPayment && paymentPending;
+  const canMarkAsPaid = !isCanceled && isEffectiveOrTransferPayment && paymentPending;
   const timeZone = order.timeZone || {};
   console.log(timeZone);
 
