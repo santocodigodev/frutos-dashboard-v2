@@ -22,10 +22,10 @@ export default function ProtectedLayout({
     <PedidosProvider>
       <RutasProvider>
         <SidebarRutasProvider>
-          <div className="flex min-h-screen bg-[#f3f4f6] relative">
+          <div className="flex h-screen bg-[#f3f4f6] relative overflow-hidden">
             <Sidebar />
-            <div className="flex-1 ml-60 relative z-0">
-              <main className="p-8">
+            <div className="flex-1 ml-60 flex flex-col min-h-0 relative z-0">
+              <main className="flex-1 overflow-auto pt-4 px-8 pb-8">
                 {children}
               </main>
             </div>
