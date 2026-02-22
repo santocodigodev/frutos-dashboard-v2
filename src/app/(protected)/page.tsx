@@ -147,15 +147,15 @@ export default function Dashboard() {
 
   const maxMonthly = Math.max(1, ...(stats?.monthlySales ?? [0]));
 
+  // Siempre mostrar los 3 métodos (incluso con 0). Porcentaje para el gráfico; si total 0, todos 0%.
   const pieData = useMemo(() => {
-    if (!stats?.byPaymentMethod) return [];
-    const { effective = 0, transfer = 0, pagoNube = 0 } = stats.byPaymentMethod;
-    const total = effective + transfer + pagoNube || 1;
+    const { effective = 0, transfer = 0, pagoNube = 0 } = stats?.byPaymentMethod ?? {};
+    const total = effective + transfer + pagoNube || 0;
     return [
-      { name: "Efectivo", value: effective, percent: (effective / total) * 100 },
-      { name: "Transferencia", value: transfer, percent: (transfer / total) * 100 },
-      { name: "PagoNube", value: pagoNube, percent: (pagoNube / total) * 100 },
-    ].filter((d) => d.value > 0);
+      { name: "Efectivo", value: effective, percent: total ? (effective / total) * 100 : 0 },
+      { name: "Transferencia", value: transfer, percent: total ? (transfer / total) * 100 : 0 },
+      { name: "PagoNube", value: pagoNube, percent: total ? (pagoNube / total) * 100 : 0 },
+    ];
   }, [stats?.byPaymentMethod]);
 
 
@@ -167,10 +167,6 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Header + date filters */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <span className="text-3xl">❄</span>
-          Dashboard - Frutos Congelados
-        </h1>
         <div className="flex items-center gap-2 flex-wrap">
           {(["today", "week", "month"] as const).map((key) => (
             <button
@@ -325,55 +321,66 @@ export default function Dashboard() {
             })}
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Ventas por Método de Pago</h3>
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <div className="relative w-48 h-48 flex-shrink-0">
-              {pieData.length === 0 ? (
-                <div className="w-full h-full rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-                  Sin datos
-                </div>
-              ) : (
-                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                  {(() => {
-                    const colors = ["#22c55e", "#86efac", "#4f46e5"];
-                    let acc = 0;
-                    return (
-                      <>
-                        {pieData.map((d, i) => {
-                          const start = acc;
-                          const len = (d.percent / 100) * 360;
-                          acc += len;
-                          const x1 = 50 + 50 * Math.cos((start * Math.PI) / 180);
-                          const y1 = 50 - 50 * Math.sin((start * Math.PI) / 180);
-                          const x2 = 50 + 50 * Math.cos(((start + len) * Math.PI) / 180);
-                          const y2 = 50 - 50 * Math.sin(((start + len) * Math.PI) / 180);
-                          const big = len > 180 ? 1 : 0;
-                          const dPath = `M 50 50 L ${x1} ${y1} A 50 50 0 ${big} 1 ${x2} ${y2} Z`;
-                          return <path key={i} d={dPath} fill={colors[i % colors.length]} />;
-                        })}
-                        <circle cx="50" cy="50" r="35" fill="white" />
-                        <text x="50" y="50" textAnchor="middle" dominantBaseline="middle" className="text-lg font-bold fill-gray-700">
-                          {stats?.totals?.orders ?? 0}
-                        </text>
-                      </>
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-gray-900 mb-5">Ventas por Método de Pago</h3>
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            <div className="relative w-52 h-52 flex-shrink-0">
+              {/* Donut con stroke-dasharray: colores del sistema (purple) */}
+              <svg viewBox="0 0 100 100" className="w-full h-full block">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#e9d5ff" strokeWidth="14" />
+                {(() => {
+                  const C = 2 * Math.PI * 42;
+                  const colors = ["#9333ea", "#a855f7", "#c084fc"]; // purple-600, purple-500, purple-400
+                  let offset = C / 4;
+                  return pieData.map((d, i) => {
+                    const length = (d.percent / 100) * C;
+                    const seg = (
+                      <circle
+                        key={i}
+                        cx="50"
+                        cy="50"
+                        r="42"
+                        fill="none"
+                        stroke={colors[i % colors.length]}
+                        strokeWidth="14"
+                        strokeDasharray={`${length} ${C + 10}`}
+                        strokeDashoffset={-offset}
+                        strokeLinecap="round"
+                      />
                     );
-                  })()}
-                </svg>
-              )}
+                    offset += length;
+                    return seg;
+                  });
+                })()}
+                <circle cx="50" cy="50" r="28" fill="white" />
+                <text
+                  x="50"
+                  y="50"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  className="text-xl font-bold fill-purple-700"
+                  style={{ fontFamily: "system-ui, sans-serif" }}
+                >
+                  {stats?.totals?.orders ?? 0}
+                </text>
+              </svg>
             </div>
-            <div className="flex-1 space-y-3">
+            <div className="flex-1 w-full space-y-4">
               {pieData.map((d, i) => {
                 const totalSum = stats?.totals?.total || 1;
-                const orderCount = stats?.totals?.orders
+                const orderCount = stats?.totals?.orders && totalSum > 0
                   ? Math.round((d.value / totalSum) * stats.totals.orders)
                   : 0;
+                const dotColors = ["bg-purple-600", "bg-purple-500", "bg-purple-400"];
                 return (
-                  <div key={i} className="flex items-center justify-between gap-2">
-                    <span className="text-sm text-gray-700">{d.name}</span>
+                  <div key={i} className="flex items-center justify-between gap-4 py-2 border-b border-gray-100 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <span className={`w-3 h-3 rounded-full flex-shrink-0 ${dotColors[i]}`} />
+                      <span className="text-base font-bold text-gray-900">{d.name}</span>
+                    </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium text-gray-900">{orderCount} Pedidos</div>
-                      <div className="text-sm text-gray-600">${formatCurrency(d.value)}</div>
+                      <div className="text-base font-bold text-gray-900">{orderCount} Pedidos</div>
+                      <div className="text-base font-semibold text-purple-700">${formatCurrency(d.value)}</div>
                     </div>
                   </div>
                 );
