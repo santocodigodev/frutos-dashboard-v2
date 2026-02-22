@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { FiHome, FiBox, FiMap, FiUsers, FiDollarSign, FiChevronDown, FiChevronUp, FiSettings } from "react-icons/fi";
+import { FiHome, FiBox, FiMap, FiUsers, FiChevronDown, FiChevronUp, FiSettings } from "react-icons/fi";
 import { usePedidos } from "../(protected)/pedidos/PedidosContext";
 import { getFormattedAdminRole } from "../utils/formatAdminRole";
 import { useSidebarRutas } from "../(protected)/rutas/SidebarContext";
@@ -229,16 +229,6 @@ export default function Sidebar() {
               )}
             </div>
           )}
-          {/* Balance */}
-          <Link
-            href="/balance"
-            className={`flex items-center gap-2 px-6 py-2 rounded transition font-medium ${
-              pathname.startsWith("/balance") ? "bg-purple-100 text-purple-700" : "text-gray-700 hover:bg-purple-50"
-            }`}
-          >
-            <FiDollarSign /> Balance
-          </Link>
-
           {/* Configuración */}
           <div>
             <button
