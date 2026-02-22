@@ -165,17 +165,17 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header + date filters */}
+      {/* Header + date filters - colores app (purple) */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2 flex-wrap">
           {(["today", "week", "month"] as const).map((key) => (
             <button
               key={key}
               onClick={() => setDateRangeKey(key)}
-              className={`px-3 py-1.5 rounded text-sm font-medium transition ${
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
                 dateRangeKey === key
-                  ? "bg-blue-100 text-blue-700 border-b-2 border-blue-600"
-                  : "text-gray-600 hover:bg-gray-100"
+                  ? "bg-purple-100 text-purple-700 border-b-2 border-purple-600 shadow-sm"
+                  : "text-gray-600 hover:bg-purple-50 hover:text-purple-600"
               }`}
             >
               {key === "today" ? "Hoy" : key === "week" ? "Esta Semana" : "Este Mes"}
@@ -184,8 +184,8 @@ export default function Dashboard() {
           <div className="relative">
             <button
               onClick={() => setShowCustomPopup(!showCustomPopup)}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm font-medium transition ${
-                dateRangeKey === "custom" ? "bg-blue-100 text-blue-700" : "text-gray-600 hover:bg-gray-100"
+              className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                dateRangeKey === "custom" ? "bg-purple-100 text-purple-700 border-b-2 border-purple-600 shadow-sm" : "text-gray-600 hover:bg-purple-50 hover:text-purple-600"
               }`}
             >
               Rango personalizado <FiChevronDown className="w-4 h-4" />
@@ -193,8 +193,8 @@ export default function Dashboard() {
             {showCustomPopup && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowCustomPopup(false)} />
-                <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[280px]">
-                  <div className="text-sm font-medium text-gray-700 mb-2">Desde</div>
+                <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-purple-200 rounded-xl shadow-xl p-5 min-w-[300px] ring-2 ring-purple-100">
+                  <div className="text-sm font-bold text-purple-900 mb-2">Desde</div>
                   <input
                     type="date"
                     value={customFrom}
@@ -202,10 +202,10 @@ export default function Dashboard() {
                       setCustomFrom(e.target.value);
                       setCustomFromError("");
                     }}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    className="w-full border border-purple-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   />
                   {customFromError && <p className="text-red-500 text-xs mt-1">{customFromError}</p>}
-                  <div className="text-sm font-medium text-gray-700 mt-3 mb-2">Hasta</div>
+                  <div className="text-sm font-bold text-purple-900 mt-3 mb-2">Hasta</div>
                   <input
                     type="date"
                     value={customTo}
@@ -213,19 +213,19 @@ export default function Dashboard() {
                       setCustomTo(e.target.value);
                       setCustomToError("");
                     }}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    className="w-full border border-purple-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   />
                   {customToError && <p className="text-red-500 text-xs mt-1">{customToError}</p>}
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex gap-2 mt-5">
                     <button
                       onClick={() => setShowCustomPopup(false)}
-                      className="flex-1 py-2 rounded border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50"
+                      className="flex-1 py-2.5 rounded-lg border border-purple-200 text-purple-700 text-sm font-semibold hover:bg-purple-50 transition"
                     >
                       Cancelar
                     </button>
                     <button
                       onClick={handleApplyCustomRange}
-                      className="flex-1 py-2 rounded bg-green-600 text-white text-sm font-medium hover:bg-green-700"
+                      className="flex-1 py-2.5 rounded-lg bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 shadow-md transition"
                     >
                       Aplicar
                     </button>
@@ -237,92 +237,104 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 4 cards: Ventas totales, Pagos validados, Pendiente por cobrar, Promedio */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-green-500 rounded-xl p-5 text-white shadow">
-          <div className="text-sm font-medium opacity-90">Ventas Totales</div>
-          <div className="text-2xl font-bold mt-1">${formatCurrency(stats?.totals?.total ?? 0)}</div>
-          <div className="text-sm opacity-90 mt-1">{(stats?.totals?.orders ?? 0)} Pedidos</div>
-          {stats?.totals?.difference != null && stats.totals.difference !== 0 && (
-            <div className="text-xs mt-2 flex items-center gap-1">
-              <span className={stats.totals.difference >= 0 ? "text-green-200" : "text-red-200"}>
-                {stats.totals.difference >= 0 ? "↑" : "↓"} {Math.abs(stats.totals.difference)}% vs periodo anter.
-              </span>
-            </div>
-          )}
-        </div>
-        <div className="bg-green-500 rounded-xl p-5 text-white shadow">
-          <div className="text-sm font-medium opacity-90">Pagos Validados</div>
-          <div className="text-2xl font-bold mt-1">${formatCurrency(stats?.validPayments?.total ?? 0)}</div>
-          <div className="text-sm opacity-90 mt-1">{(stats?.validPayments?.payments ?? 0)} Pagos Confirmados</div>
-        </div>
-        <div className="bg-amber-400 rounded-xl p-5 text-amber-900 shadow">
-          <div className="text-sm font-medium opacity-90">Pendiente por Cobrar</div>
-          <div className="text-2xl font-bold mt-1">${formatCurrency(stats?.pendingPayments?.total ?? 0)}</div>
-          <div className="text-sm opacity-90 mt-1">{(stats?.pendingPayments?.orders ?? 0)} Pedidos Pendientes</div>
-        </div>
-        <div className="bg-blue-400 rounded-xl p-5 text-white shadow">
-          <div className="text-sm font-medium opacity-90">Ticket Promedio</div>
-          <div className="text-2xl font-bold mt-1">${formatCurrency(stats?.average?.total ?? 0)}</div>
-          <div className="text-sm opacity-90 mt-1">Promedio por Pedido</div>
-        </div>
-      </div>
-
-      {/* 4 cards: Pedidos nuevos, Pick up / En preparación, En camino, Finalizados */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-          <div className="text-sm text-gray-500">Pedidos Nuevos</div>
-          <div className="text-2xl font-bold text-gray-900 mt-1">{stats?.orders?.created ?? 0}</div>
-          <a href="/pedidos/nuevos" className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition">
-            <FiBox className="w-4 h-4" /> Ver Pedidos <FiArrowRight className="w-4 h-4" />
-          </a>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-          <div className="text-sm text-gray-500">Pick Up / En Preparación</div>
-          <div className="text-2xl font-bold text-gray-900 mt-1">{pickUpCount}</div>
-          <a href="/pedidos/por-asignar-ruta" className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition">
-            <FiBox className="w-4 h-4" /> Ver Pedidos <FiArrowRight className="w-4 h-4" />
-          </a>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-          <div className="text-sm text-gray-500">En Camino</div>
-          <div className="text-2xl font-bold text-gray-900 mt-1 flex items-center gap-1">
-            <span className="text-gray-400">🚚</span> {stats?.orders?.in_route ?? 0}
+      {/* 4 cards superiores: más bonitas, colores app (purple) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="bg-purple-600 rounded-2xl p-6 text-white shadow-lg shadow-purple-200/50 border border-purple-500/20 overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="relative">
+            <div className="text-sm font-bold text-white/90 uppercase tracking-wide">Ventas Totales</div>
+            <div className="text-3xl font-bold mt-2">${formatCurrency(stats?.totals?.total ?? 0)}</div>
+            <div className="text-sm font-semibold text-white/90 mt-1">{(stats?.totals?.orders ?? 0)} Pedidos</div>
+            {stats?.totals?.difference != null && stats.totals.difference !== 0 && (
+              <div className="text-xs font-semibold mt-3 flex items-center gap-1">
+                <span className={stats.totals.difference >= 0 ? "text-purple-200" : "text-red-200"}>
+                  {stats.totals.difference >= 0 ? "↑" : "↓"} {Math.abs(stats.totals.difference)}% vs periodo anter.
+                </span>
+              </div>
+            )}
           </div>
-          <a href="/pedidos/en-camino" className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition">
-            <FiBox className="w-4 h-4" /> Ver Pedidos <FiArrowRight className="w-4 h-4" />
-          </a>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-          <div className="text-sm text-gray-500">Finalizados</div>
-          <div className="text-2xl font-bold text-gray-900 mt-1">{stats?.orders?.finished ?? 0}</div>
+        <div className="bg-purple-600 rounded-2xl p-6 text-white shadow-lg shadow-purple-200/50 border border-purple-500/20 overflow-hidden relative">
+          <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+          <div className="relative">
+            <div className="text-sm font-bold text-white/90 uppercase tracking-wide">Pagos Validados</div>
+            <div className="text-3xl font-bold mt-2">${formatCurrency(stats?.validPayments?.total ?? 0)}</div>
+            <div className="text-sm font-semibold text-white/90 mt-1">{(stats?.validPayments?.payments ?? 0)} Pagos Confirmados</div>
+          </div>
+        </div>
+        <div className="bg-purple-100 rounded-2xl p-6 border-2 border-purple-200 shadow-md overflow-hidden relative">
+          <div className="absolute top-2 right-2 w-16 h-16 bg-purple-200/30 rounded-full" />
+          <div className="relative">
+            <div className="text-sm font-bold text-purple-800 uppercase tracking-wide">Pendiente por Cobrar</div>
+            <div className="text-3xl font-bold text-purple-700 mt-2">${formatCurrency(stats?.pendingPayments?.total ?? 0)}</div>
+            <div className="text-sm font-semibold text-purple-600 mt-1">{(stats?.pendingPayments?.orders ?? 0)} Pedidos Pendientes</div>
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl p-6 border-2 border-purple-200 shadow-md overflow-hidden relative">
+          <div className="absolute bottom-2 right-2 w-20 h-20 bg-purple-100 rounded-full" />
+          <div className="relative">
+            <div className="text-sm font-bold text-purple-700 uppercase tracking-wide">Ticket Promedio</div>
+            <div className="text-3xl font-bold text-purple-600 mt-2">${formatCurrency(stats?.average?.total ?? 0)}</div>
+            <div className="text-sm font-semibold text-gray-500 mt-1">Promedio por Pedido</div>
+          </div>
         </div>
       </div>
 
-      {/* Charts row: Ventas mensuales (bar) + Ventas por método de pago (pie) */}
+      {/* 4 cards: Pedidos por estado - colores app */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="bg-white rounded-2xl border-2 border-purple-100 p-6 shadow-md hover:shadow-lg hover:border-purple-200 transition">
+          <div className="text-sm font-bold text-purple-700 uppercase tracking-wide">Pedidos Nuevos</div>
+          <div className="text-3xl font-bold text-gray-900 mt-2">{stats?.orders?.created ?? 0}</div>
+          <a href="/pedidos/nuevos" className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 shadow-md transition">
+            <FiBox className="w-4 h-4" /> Ver Pedidos <FiArrowRight className="w-4 h-4" />
+          </a>
+        </div>
+        <div className="bg-white rounded-2xl border-2 border-purple-100 p-6 shadow-md hover:shadow-lg hover:border-purple-200 transition">
+          <div className="text-sm font-bold text-purple-700 uppercase tracking-wide">Pick Up / En Preparación</div>
+          <div className="text-3xl font-bold text-gray-900 mt-2">{pickUpCount}</div>
+          <a href="/pedidos/por-asignar-ruta" className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 shadow-md transition">
+            <FiBox className="w-4 h-4" /> Ver Pedidos <FiArrowRight className="w-4 h-4" />
+          </a>
+        </div>
+        <div className="bg-white rounded-2xl border-2 border-purple-100 p-6 shadow-md hover:shadow-lg hover:border-purple-200 transition">
+          <div className="text-sm font-bold text-purple-700 uppercase tracking-wide">En Camino</div>
+          <div className="text-3xl font-bold text-gray-900 mt-2 flex items-center gap-2">
+            <span className="text-purple-400">🚚</span> {stats?.orders?.in_route ?? 0}
+          </div>
+          <a href="/pedidos/en-camino" className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 shadow-md transition">
+            <FiBox className="w-4 h-4" /> Ver Pedidos <FiArrowRight className="w-4 h-4" />
+          </a>
+        </div>
+        <div className="bg-white rounded-2xl border-2 border-purple-100 p-6 shadow-md hover:shadow-lg hover:border-purple-200 transition">
+          <div className="text-sm font-bold text-purple-700 uppercase tracking-wide">Finalizados</div>
+          <div className="text-3xl font-bold text-gray-900 mt-2">{stats?.orders?.finished ?? 0}</div>
+        </div>
+      </div>
+
+      {/* Charts row - colores app (purple) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Ventas Mensuales</h3>
+        <div className="bg-white rounded-2xl border-2 border-purple-100 p-6 shadow-md">
+          <h3 className="text-lg font-bold text-purple-800 mb-5">Ventas Mensuales</h3>
           <div className="flex items-end gap-4 h-64">
             {[3, 2, 1, 0].map((idx, i) => {
               const val = (stats?.monthlySales ?? [0, 0, 0, 0])[idx] ?? 0;
               return (
                 <div key={idx} className="flex-1 flex flex-col items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="text-sm font-bold text-purple-700">
                     {val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : `${(val / 1000).toFixed(0)}k`}
                   </span>
                   <div
-                    className="w-full bg-green-500 rounded-t min-h-[8px] transition-all"
+                    className="w-full bg-purple-500 rounded-t-lg min-h-[8px] transition-all shadow-sm"
                     style={{ height: `${Math.max(8, (val / maxMonthly) * 200)}px` }}
                   />
-                  <span className="text-xs text-gray-500">{monthLabels[i] ?? ""}</span>
+                  <span className="text-xs font-medium text-gray-600">{monthLabels[i] ?? ""}</span>
                 </div>
               );
             })}
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-gray-900 mb-5">Ventas por Método de Pago</h3>
+        <div className="bg-white rounded-2xl border-2 border-purple-100 p-6 shadow-md">
+          <h3 className="text-lg font-bold text-purple-800 mb-5">Ventas por Método de Pago</h3>
           <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="relative w-52 h-52 flex-shrink-0">
               {/* Donut con stroke-dasharray: colores del sistema (purple) */}
@@ -390,9 +402,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Últimos pedidos - mismo endpoint que ahora (context) */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4 text-gray-500">Últimos Pedidos</h2>
+      {/* Últimos pedidos - colores app */}
+      <div className="bg-white rounded-2xl border-2 border-purple-100 p-6 shadow-md">
+        <h2 className="text-xl font-bold text-purple-800 mb-4">Últimos Pedidos</h2>
         <OrdersTable orders={orders.slice(0, 5)} isMain={true} />
       </div>
     </div>
